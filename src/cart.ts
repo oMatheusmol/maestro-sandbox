@@ -1,0 +1,17 @@
+import { formatBRL, parseBRL } from "./money.js";
+
+export interface CartLine {
+  sku: string;
+  unitPrice: string;
+  quantity: number;
+}
+
+/** Sums the cart lines; prices arrive as Brazilian-formatted strings. */
+export function cartTotal(lines: CartLine[]): number {
+  return lines.reduce((sum, line) => sum + parseBRL(line.unitPrice) * line.quantity, 0);
+}
+
+/** Human-readable total shown at checkout. */
+export function checkoutSummary(lines: CartLine[]): string {
+  return `Total: ${formatBRL(cartTotal(lines))}`;
+}
