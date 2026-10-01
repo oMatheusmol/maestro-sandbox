@@ -1,6 +1,6 @@
 /** Number of pages needed to show `total` items, `size` per page. */
 export function pageCount(total: number, size: number): number {
-  return Math.floor(total / size);
+  return Math.ceil(total / size);
 }
 
 /** Returns the items of a 1-based page. */
