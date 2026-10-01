@@ -1,6 +1,11 @@
-/** Parses a Brazilian-formatted amount such as "12,50" into a number. */
+/**
+ * Parses a Brazilian-formatted amount such as "12,50" or "R$ 1.234,56" into a number.
+ * Dots are treated as thousands separators and the comma as the decimal separator.
+ */
 export function parseBRL(input: string): number {
-  return Number(input.trim().replace("R$", "").trim().replace(",", "."));
+  return Number(
+    input.trim().replace("R$", "").trim().replace(/\./g, "").replace(",", "."),
+  );
 }
 
 /** Formats a number as Brazilian currency, e.g. 12.5 -> "R$ 12,50". */
