@@ -7,9 +7,11 @@ export function parseBRL(input: string): number {
   if (trimmed === "" || trimmed === "R$") {
     throw new Error(`invalid amount: ${input}`);
   }
-  const result = Number(
-    trimmed.replace("R$", "").trim().replace(/\./g, "").replace(",", "."),
-  );
+  const cleaned = trimmed.replace("R$", "").trim();
+  if (!/^[\d.,]+$/.test(cleaned)) {
+    throw new Error(`invalid amount: ${input}`);
+  }
+  const result = Number(cleaned.replace(/\./g, "").replace(",", "."));
   if (!Number.isFinite(result)) {
     throw new Error(`invalid amount: ${input}`);
   }
