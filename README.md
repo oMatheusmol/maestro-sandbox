@@ -7,3 +7,5 @@ pnpm install
 pnpm typecheck && pnpm test
 SENTRY_DSN=... pnpm trigger <cenário> [repetições]
 ```
+
+Carts reject quantities that are not positive integers.
