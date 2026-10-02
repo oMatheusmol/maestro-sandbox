@@ -13,4 +13,12 @@ describe("displayName", () => {
   it("falls back to the name when the user has no profile", () => {
     expect(displayName({ id: "42", name: "Bruno Lima" })).toBe("Bruno Lima");
   });
+
+  it("falls back to the name when the nickname is whitespace-only", () => {
+    expect(displayName({ id: "1", name: "Ana Souza", profile: { nickname: "   " } })).toBe("Ana Souza");
+  });
+
+  it("returns a trimmed nickname", () => {
+    expect(displayName({ id: "1", name: "Ana Souza", profile: { nickname: "  ana  " } })).toBe("ana");
+  });
 });
