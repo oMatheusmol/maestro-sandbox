@@ -7,35 +7,45 @@ describe("fetchShippingQuote", () => {
   });
 
   it("rejects with UpstreamTimeoutError when carrier is slow", async () => {
-    const slowFetcher = (): Promise<number> => new Promise(() => {
-      // Never resolves
-    });
+    vi.useFakeTimers();
+    try {
+      const slowFetcher = (): Promise<number> => new Promise(() => {
+        // Never resolves
+      });
 
-    await expect(
-      fetchShippingQuote("01000-000", 100, slowFetcher),
-    ).rejects.toThrow(UpstreamTimeoutError);
+      const promise = fetchShippingQuote("01000-000", 100, slowFetcher);
+      vi.advanceTimersByTime(100);
+
+      await expect(promise).rejects.toThrow(UpstreamTimeoutError);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("clears the timeout when the carrier responds first", async () => {
-    const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
-
-    await fetchShippingQuote("01000-000", 100);
-
-    expect(clearTimeoutSpy).toHaveBeenCalledOnce();
-    clearTimeoutSpy.mockRestore();
+    vi.useFakeTimers();
+    try {
+      await fetchShippingQuote("01000-000", 100);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("clears the timeout when the carrier times out", async () => {
-    const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
-    const slowFetcher = (): Promise<number> => new Promise(() => {
-      // Never resolves
-    });
+    vi.useFakeTimers();
+    try {
+      const slowFetcher = (): Promise<number> => new Promise(() => {
+        // Never resolves
+      });
 
-    await expect(
-      fetchShippingQuote("01000-000", 100, slowFetcher),
-    ).rejects.toThrow(UpstreamTimeoutError);
+      const promise = fetchShippingQuote("01000-000", 100, slowFetcher);
+      vi.advanceTimersByTime(100);
 
-    expect(clearTimeoutSpy).toHaveBeenCalledOnce();
-    clearTimeoutSpy.mockRestore();
+      await expect(promise).rejects.toThrow(UpstreamTimeoutError);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
