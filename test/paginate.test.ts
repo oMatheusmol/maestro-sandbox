@@ -29,4 +29,20 @@ describe("paginate", () => {
       );
     });
   });
+
+  describe("empty listing", () => {
+    it("counts one page for empty listing", () => {
+      expect(pageCount(0, 10)).toBe(1);
+    });
+
+    it("returns empty array for first page of empty listing", () => {
+      expect(getPage([], 1, 10)).toEqual([]);
+    });
+
+    it("throws for second page of empty listing", () => {
+      expect(() => getPage([], 2, 10)).toThrow(
+        new RangeError("page 2 out of range (1..1)"),
+      );
+    });
+  });
 });
