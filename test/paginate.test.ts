@@ -45,4 +45,42 @@ describe("paginate", () => {
       );
     });
   });
+
+  describe("invalid page size", () => {
+    it("pageCount throws with size 0", () => {
+      expect(() => pageCount(10, 0)).toThrow(
+        new RangeError("page size must be a positive integer, got 0"),
+      );
+    });
+
+    it("pageCount throws with negative size", () => {
+      expect(() => pageCount(10, -5)).toThrow(
+        new RangeError("page size must be a positive integer, got -5"),
+      );
+    });
+
+    it("pageCount throws with non-integer size", () => {
+      expect(() => pageCount(10, 0.5)).toThrow(
+        new RangeError("page size must be a positive integer, got 0.5"),
+      );
+    });
+
+    it("getPage throws with size 0", () => {
+      expect(() => getPage(items, 1, 0)).toThrow(
+        new RangeError("page size must be a positive integer, got 0"),
+      );
+    });
+
+    it("getPage throws with negative size", () => {
+      expect(() => getPage(items, 1, -5)).toThrow(
+        new RangeError("page size must be a positive integer, got -5"),
+      );
+    });
+
+    it("getPage throws with non-integer size", () => {
+      expect(() => getPage(items, 1, 2.5)).toThrow(
+        new RangeError("page size must be a positive integer, got 2.5"),
+      );
+    });
+  });
 });
