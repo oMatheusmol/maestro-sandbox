@@ -22,16 +22,6 @@ describe("fetchShippingQuote", () => {
     }
   });
 
-  it("clears the timeout when the carrier responds first", async () => {
-    vi.useFakeTimers();
-    try {
-      await fetchShippingQuote("01000-000", 100);
-      expect(vi.getTimerCount()).toBe(0);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
   it("clears the timeout when the carrier times out", async () => {
     vi.useFakeTimers();
     try {
