@@ -18,8 +18,16 @@ describe("money", () => {
     expect(parseBRL("R$ 1.234.567,89")).toBe(1234567.89);
   });
 
-  it("returns NaN for invalid input", () => {
-    expect(parseBRL("abc")).toBeNaN();
+  it("throws for non-numeric input", () => {
+    expect(() => parseBRL("abc")).toThrow("invalid amount: abc");
+  });
+
+  it("throws for empty string", () => {
+    expect(() => parseBRL("")).toThrow("invalid amount: ");
+  });
+
+  it("throws for multiple commas", () => {
+    expect(() => parseBRL("1,2,3")).toThrow("invalid amount: 1,2,3");
   });
 
   it("formats an amount", () => {

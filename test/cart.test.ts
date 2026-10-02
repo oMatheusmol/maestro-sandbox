@@ -23,7 +23,7 @@ describe("cart", () => {
 
   it("throws on an invalid price", () => {
     expect(() => checkoutSummary([{ sku: "D", unitPrice: "abc", quantity: 1 }])).toThrow(
-      /invalid amount: NaN/,
+      /invalid amount: abc/,
     );
   });
 });

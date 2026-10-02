@@ -3,9 +3,17 @@
  * Dots are treated as thousands separators and the comma as the decimal separator.
  */
 export function parseBRL(input: string): number {
-  return Number(
-    input.trim().replace("R$", "").trim().replace(/\./g, "").replace(",", "."),
+  const trimmed = input.trim();
+  if (trimmed === "" || trimmed === "R$") {
+    throw new Error(`invalid amount: ${input}`);
+  }
+  const result = Number(
+    trimmed.replace("R$", "").trim().replace(/\./g, "").replace(",", "."),
   );
+  if (!Number.isFinite(result)) {
+    throw new Error(`invalid amount: ${input}`);
+  }
+  return result;
 }
 
 /**
