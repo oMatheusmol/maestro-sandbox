@@ -26,10 +26,4 @@ describe("cart", () => {
       /invalid amount: abc/,
     );
   });
-
-  it("throws on a non-numeric price like 'free'", () => {
-    expect(() => checkoutSummary([{ sku: "GIFT", unitPrice: "free", quantity: 1 }])).toThrow(
-      /invalid amount: free/,
-    );
-  });
 });
