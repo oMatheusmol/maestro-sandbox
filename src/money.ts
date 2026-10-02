@@ -1,16 +1,11 @@
 /**
  * Parses a Brazilian-formatted amount such as "12,50" or "R$ 1.234,56" into a number.
  * Dots are treated as thousands separators and the comma as the decimal separator.
- * Throws an error if the input is invalid.
  */
 export function parseBRL(input: string): number {
-  const result = Number(
+  return Number(
     input.trim().replace(/\s/g, "").replace("R$", "").replace(/\./g, "").replace(",", "."),
   );
-  if (!Number.isFinite(result)) {
-    throw new Error(`invalid amount: ${result}`);
-  }
-  return result;
 }
 
 /**
