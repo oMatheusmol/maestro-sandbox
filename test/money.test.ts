@@ -51,4 +51,12 @@ describe("money", () => {
   it("round-trips through parseBRL", () => {
     expect(parseBRL(formatBRL(1234567.89))).toBe(1234567.89);
   });
+
+  it("parses a negative amount with minus sign before currency symbol", () => {
+    expect(parseBRL("-R$ 12,50")).toBe(-12.5);
+  });
+
+  it("parses a negative amount with minus sign after currency symbol", () => {
+    expect(parseBRL("R$ -12,50")).toBe(-12.5);
+  });
 });

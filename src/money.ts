@@ -4,7 +4,7 @@
  */
 export function parseBRL(input: string): number {
   return Number(
-    input.trim().replace("R$", "").trim().replace(/\./g, "").replace(",", "."),
+    input.trim().replace(/\s/g, "").replace("R$", "").replace(/\./g, "").replace(",", "."),
   );
 }
 
