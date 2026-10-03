@@ -33,6 +33,58 @@ for (const screen of SCREENS) {
   });
 }
 
+test("keeps the checkout actions footer fixed at the bottom on mobile", async ({ page, viewport }) => {
+  // Only run on phone viewport (375px width)
+  if (!viewport || viewport.width !== 375) {
+    test.skip();
+  }
+
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "Checkout" })).toBeVisible();
+
+  const actionsFooter = page.locator(".actions");
+  const shippingForm = page.locator(".shipping");
+
+  // Verify the actions footer is initially visible
+  await expect(actionsFooter).toBeVisible();
+
+  // Verify the actions footer uses position: fixed
+  const position = await actionsFooter.evaluate((el) => window.getComputedStyle(el).position);
+  expect(position).toBe("fixed");
+
+  // Get initial Y position of the actions footer
+  const initialBox = await actionsFooter.boundingBox();
+  expect(initialBox).not.toBeNull();
+  const initialY = initialBox?.y ?? 0;
+
+  // Scroll down to see more of the form
+  await shippingForm.scrollIntoViewIfNeeded();
+  await page.evaluate(() => {
+    window.scrollBy(0, 200);
+  });
+
+  // Verify the actions footer remains visible and stays at the same viewport position after scroll
+  const scrolledBox = await actionsFooter.boundingBox();
+  expect(scrolledBox).not.toBeNull();
+
+  if (scrolledBox && viewport) {
+    // With position: fixed, the Y position in the viewport should remain the same
+    expect(scrolledBox.y).toBe(initialY);
+    // Verify it's still visible at the bottom of the viewport
+    expect(scrolledBox.y).toBeGreaterThanOrEqual(0);
+    expect(scrolledBox.y + scrolledBox.height).toBeLessThanOrEqual(viewport.height + 2);
+  }
+
+  // Verify the pay button is fully visible and clickable
+  const payButton = page.locator(".pay");
+  await expect(payButton).toBeVisible();
+  const payBox = await payButton.boundingBox();
+  expect(payBox).not.toBeNull();
+  if (payBox && viewport) {
+    expect(payBox.x + payBox.width).toBeLessThanOrEqual(viewport.width);
+  }
+});
+
 test("records a voice note with audio data", async ({ page, context }) => {
   await context.grantPermissions(["microphone"]);
   await page.goto("/recorder.html");
