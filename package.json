@@ -7,17 +7,21 @@
     "node": ">=24"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "dev": "vite",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web",
     "test": "vitest run",
+    "test:ui": "playwright test",
     "trigger": "tsx scripts/trigger.ts"
   },
   "dependencies": {
     "@sentry/node": "^11.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/node": "^26.6.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
+    "vite": "^8.3.1",
     "vitest": "^5.0.3"
   }
 }

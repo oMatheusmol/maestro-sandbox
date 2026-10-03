@@ -6,4 +6,5 @@
 - Never add Co-Authored-By trailers or any tool attribution to commits, PRs or code.
 - Every bug fix comes with a test that fails before the fix, including the error path.
 - Before pushing: `pnpm typecheck && pnpm test` must pass.
+- A change to a page (`web/`) comes with a Playwright test in `e2e/` that acts on it; `pnpm test:ui` runs every test on a phone and a desktop, and must pass.
 - Code and comments in English. No `any`.
