@@ -45,4 +45,36 @@ describe("paginate", () => {
       );
     });
   });
+
+  describe("validation", () => {
+    it("throws when items is not an array", () => {
+      expect(() => getPage(null as any, 1, 10)).toThrow(TypeError);
+      expect(() => getPage(null as any, 1, 10)).toThrow(/items must be an array/);
+    });
+
+    it("throws when page is not a positive integer", () => {
+      expect(() => getPage(items, 0, 5)).toThrow(RangeError);
+      expect(() => getPage(items, 0, 5)).toThrow(/page must be a positive integer/);
+    });
+
+    it("throws when page is negative", () => {
+      expect(() => getPage(items, -1, 5)).toThrow(RangeError);
+      expect(() => getPage(items, -1, 5)).toThrow(/page must be a positive integer/);
+    });
+
+    it("throws when size is not a positive integer", () => {
+      expect(() => getPage(items, 1, 0)).toThrow(RangeError);
+      expect(() => getPage(items, 1, 0)).toThrow(/size must be a positive integer/);
+    });
+
+    it("throws when total is negative in pageCount", () => {
+      expect(() => pageCount(-1, 5)).toThrow(RangeError);
+      expect(() => pageCount(-1, 5)).toThrow(/total must be a non-negative integer/);
+    });
+
+    it("throws when size is not a positive integer in pageCount", () => {
+      expect(() => pageCount(10, 0)).toThrow(RangeError);
+      expect(() => pageCount(10, 0)).toThrow(/size must be a positive integer/);
+    });
+  });
 });

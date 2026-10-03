@@ -13,6 +13,18 @@ export interface Settlement {
 
 /** Daily reconciliation: sum of order totals must match the payout exactly. */
 export function reconcile(orders: Order[], settlement: Settlement): void {
+  if (!Array.isArray(orders)) {
+    throw new TypeError(`orders must be an array: ${typeof orders}`);
+  }
+  if (!settlement || typeof settlement !== "object") {
+    throw new TypeError(`settlement must be an object: ${typeof settlement}`);
+  }
+  if (!Array.isArray(settlement.orderIds)) {
+    throw new TypeError(`settlement.orderIds must be an array: ${typeof settlement.orderIds}`);
+  }
+  if (!Number.isFinite(settlement.paidOut)) {
+    throw new TypeError(`settlement.paidOut must be a finite number: ${settlement.paidOut}`);
+  }
   const expected = orders
     .filter((o) => settlement.orderIds.includes(o.id))
     .reduce((sum, o) => sum + cartTotal(o.lines), 0);

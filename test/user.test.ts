@@ -49,4 +49,23 @@ describe("displayName", () => {
   it("preserves internal whitespace in nickname", () => {
     expect(displayName({ id: "1", name: "Ana Souza", profile: { nickname: "  Ana Silva  " } })).toBe("Ana Silva");
   });
+
+  it("throws when user is not an object", () => {
+    expect(() => displayName(null as any)).toThrow(TypeError);
+    expect(() => displayName(null as any)).toThrow(/user must be an object/);
+  });
+
+  it("throws when user.id is not a non-empty string", () => {
+    expect(() => displayName({ id: "", name: "Ana Souza" })).toThrow(TypeError);
+    expect(() => displayName({ id: "", name: "Ana Souza" })).toThrow(
+      /user.id must be a non-empty string/,
+    );
+  });
+
+  it("throws when user.name is not a non-empty string", () => {
+    expect(() => displayName({ id: "1", name: "" })).toThrow(TypeError);
+    expect(() => displayName({ id: "1", name: "" })).toThrow(
+      /user.name must be a non-empty string/,
+    );
+  });
 });

@@ -59,6 +59,11 @@ describe("money", () => {
   it("round-trips through parseBRL", () => {
     expect(parseBRL(formatBRL(1234567.89))).toBe(1234567.89);
   });
+
+  it("throws when input is not a string", () => {
+    expect(() => parseBRL(123 as any)).toThrow(TypeError);
+    expect(() => parseBRL(123 as any)).toThrow(/input must be a string/);
+  });
 });
 
 describe("Money", () => {

@@ -8,6 +8,9 @@ export interface CartLine {
 
 /** Sums the cart lines; prices arrive as Brazilian-formatted strings. */
 export function cartTotal(lines: CartLine[]): number {
+  if (!Array.isArray(lines)) {
+    throw new TypeError(`lines must be an array: ${typeof lines}`);
+  }
   return lines.reduce((sum, line) => {
     if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
       throw new RangeError(`quantity for product code ${line.productCode} must be a positive integer`);
