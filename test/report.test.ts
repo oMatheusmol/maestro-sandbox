@@ -26,4 +26,33 @@ describe("reconcile", () => {
       /reconciliation mismatch: expected 10, paid out 10.5/,
     );
   });
+
+  it("throws when orders is not an array", () => {
+    expect(() => reconcile(null as any, { orderIds: [], paidOut: 0 })).toThrow(TypeError);
+    expect(() => reconcile(null as any, { orderIds: [], paidOut: 0 })).toThrow(
+      /orders must be an array/,
+    );
+  });
+
+  it("throws when settlement is not an object", () => {
+    const orders: any[] = [];
+    expect(() => reconcile(orders, null as any)).toThrow(TypeError);
+    expect(() => reconcile(orders, null as any)).toThrow(/settlement must be an object/);
+  });
+
+  it("throws when settlement.orderIds is not an array", () => {
+    const orders: any[] = [];
+    expect(() => reconcile(orders, { orderIds: null, paidOut: 0 } as any)).toThrow(TypeError);
+    expect(() => reconcile(orders, { orderIds: null, paidOut: 0 } as any)).toThrow(
+      /settlement.orderIds must be an array/,
+    );
+  });
+
+  it("throws when settlement.paidOut is not a finite number", () => {
+    const orders: any[] = [];
+    expect(() => reconcile(orders, { orderIds: [], paidOut: NaN })).toThrow(TypeError);
+    expect(() => reconcile(orders, { orderIds: [], paidOut: NaN })).toThrow(
+      /settlement.paidOut must be a finite number/,
+    );
+  });
 });

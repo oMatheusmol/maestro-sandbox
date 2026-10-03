@@ -66,4 +66,9 @@ describe("cart", () => {
       ]),
     ).toThrow(/quantity for product code B must be a positive integer/);
   });
+
+  it("throws when lines is not an array", () => {
+    expect(() => cartTotal(null as any)).toThrow(TypeError);
+    expect(() => cartTotal(null as any)).toThrow(/lines must be an array/);
+  });
 });

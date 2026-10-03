@@ -3,6 +3,9 @@
  * Dots are treated as thousands separators and the comma as the decimal separator.
  */
 export function parseBRL(input: string): number {
+  if (typeof input !== "string") {
+    throw new TypeError(`input must be a string: ${typeof input}`);
+  }
   const trimmed = input.trim();
   if (trimmed === "" || trimmed === "R$") {
     throw new Error(`invalid amount: ${input}`);

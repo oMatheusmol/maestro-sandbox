@@ -8,6 +8,12 @@ export async function fetchShippingQuote(
   timeoutMs = 5000,
   fetcher: (zip: string) => Promise<number> = defaultFetcher,
 ): Promise<number> {
+  if (typeof zip !== "string") {
+    throw new TypeError(`zip must be a string: ${typeof zip}`);
+  }
+  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+    throw new RangeError(`timeoutMs must be a positive integer: ${timeoutMs}`);
+  }
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new UpstreamTimeoutError(`carrier timed out after ${timeoutMs}ms`)), timeoutMs),
   );
