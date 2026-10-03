@@ -142,6 +142,20 @@ h2 {
   cursor: pointer;
 }
 
+@media (max-width: 600px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pay {
+    white-space: normal;
+    height: auto;
+    padding: 12px 28px;
+    flex-shrink: 1;
+  }
+}
+
 .pay:disabled {
   opacity: 0.6;
   cursor: default;
