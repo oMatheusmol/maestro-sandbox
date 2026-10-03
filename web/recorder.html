@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Voice note · Sandbox Shop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="/">Sandbox Shop</a>
+      <nav>
+        <a href="/">Checkout</a>
+        <a href="/recorder.html" aria-current="page">Voice note</a>
+      </nav>
+    </header>
+    <main class="page">
+      <h1>Voice note</h1>
+      <p>Tell the delivery person how to find you: record a short note and it goes with your order.</p>
+      <section class="recorder" aria-label="Recorder">
+        <div class="controls">
+          <button class="record" id="record" type="button">Record</button>
+          <button id="stop" type="button" disabled>Stop</button>
+        </div>
+        <p class="status" id="status" role="status">Ready to record.</p>
+        <ul class="notes" id="notes" aria-label="Sent notes"></ul>
+      </section>
+    </main>
+    <script type="module" src="./recorder.ts"></script>
+  </body>
+</html>
