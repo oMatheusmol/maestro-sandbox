@@ -11,5 +11,6 @@ export interface User {
 
 /** Name shown in the header: nickname when set, otherwise the full name. */
 export function displayName(user: User): string {
-  return user.profile?.nickname ?? user.name;
+  const nickname = user.profile?.nickname?.trim();
+  return nickname && nickname.length > 0 ? nickname : user.name;
 }
