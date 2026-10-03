@@ -96,6 +96,11 @@ describe("Money", () => {
     expect(m.cents).toBe(-599);
   });
 
+  it("parses BRL string with three decimals, rounding to nearest cent", () => {
+    const m = Money.fromBRL("R$ 1,005");
+    expect(m.cents).toBe(100);
+  });
+
   it("throws when parsing invalid BRL string", () => {
     expect(() => Money.fromBRL("invalid")).toThrow("invalid amount");
   });
@@ -152,6 +157,14 @@ describe("Money", () => {
     expect(result.cents).toBe(-500);
   });
 
+  it("subtracts going below zero", () => {
+    const a = new Money(100);
+    const b = new Money(250);
+    const result = a.subtract(b);
+    expect(result.cents).toBe(-150);
+    expect(result.toBRL()).toBe("R$ -1,50");
+  });
+
   it("multiplies by positive quantity", () => {
     const m = new Money(1250);
     const result = m.multiplyBy(3);
@@ -163,6 +176,18 @@ describe("Money", () => {
     const m = new Money(1000);
     const result = m.multiplyBy(1.5);
     expect(result.cents).toBe(1500);
+  });
+
+  it("multiplies by fractional quantity with rounding", () => {
+    const m = new Money(100);
+    const result = m.multiplyBy(0.33);
+    expect(result.cents).toBe(33);
+  });
+
+  it("multiplies by fractional quantity resulting in rounding up", () => {
+    const m = new Money(100);
+    const result = m.multiplyBy(1.337);
+    expect(result.cents).toBe(134);
   });
 
   it("multiplies by zero", () => {
