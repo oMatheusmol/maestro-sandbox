@@ -34,8 +34,7 @@ for (const screen of SCREENS) {
 }
 
 test("keeps the checkout actions footer fixed at the bottom on mobile", async ({ page, viewport }) => {
-  // Only run on phone viewport (375px width)
-  if (!viewport || viewport.width !== 375) {
+  if (!viewport) {
     test.skip();
   }
 
@@ -48,40 +47,61 @@ test("keeps the checkout actions footer fixed at the bottom on mobile", async ({
   // Verify the actions footer is initially visible
   await expect(actionsFooter).toBeVisible();
 
-  // Verify the actions footer uses position: fixed
-  const position = await actionsFooter.evaluate((el) => window.getComputedStyle(el).position);
-  expect(position).toBe("fixed");
+  // Check if we're on mobile (375px) or desktop (1280px)
+  const isMobile = viewport!.width === 375;
 
-  // Get initial Y position of the actions footer
-  const initialBox = await actionsFooter.boundingBox();
-  expect(initialBox).not.toBeNull();
-  const initialY = initialBox?.y ?? 0;
+  if (isMobile) {
+    // On mobile, verify the actions footer uses position: fixed
+    const position = await actionsFooter.evaluate((el) => window.getComputedStyle(el).position);
+    expect(position).toBe("fixed");
 
-  // Scroll down to see more of the form
-  await shippingForm.scrollIntoViewIfNeeded();
-  await page.evaluate(() => {
-    window.scrollBy(0, 200);
-  });
+    // Get initial Y position of the actions footer
+    const initialBox = await actionsFooter.boundingBox();
+    expect(initialBox).not.toBeNull();
+    const initialY = initialBox?.y ?? 0;
 
-  // Verify the actions footer remains visible and stays at the same viewport position after scroll
-  const scrolledBox = await actionsFooter.boundingBox();
-  expect(scrolledBox).not.toBeNull();
+    // Scroll down to see more of the form
+    await shippingForm.scrollIntoViewIfNeeded();
+    await page.evaluate(() => {
+      window.scrollBy(0, 200);
+    });
 
-  if (scrolledBox && viewport) {
-    // With position: fixed, the Y position in the viewport should remain the same
-    expect(scrolledBox.y).toBe(initialY);
-    // Verify it's still visible at the bottom of the viewport
-    expect(scrolledBox.y).toBeGreaterThanOrEqual(0);
-    expect(scrolledBox.y + scrolledBox.height).toBeLessThanOrEqual(viewport.height + 2);
-  }
+    // Verify the actions footer remains visible and stays at the same viewport position after scroll
+    const scrolledBox = await actionsFooter.boundingBox();
+    expect(scrolledBox).not.toBeNull();
 
-  // Verify the pay button is fully visible and clickable
-  const payButton = page.locator(".pay");
-  await expect(payButton).toBeVisible();
-  const payBox = await payButton.boundingBox();
-  expect(payBox).not.toBeNull();
-  if (payBox && viewport) {
-    expect(payBox.x + payBox.width).toBeLessThanOrEqual(viewport.width);
+    if (scrolledBox) {
+      // With position: fixed, the Y position in the viewport should remain the same
+      expect(scrolledBox.y).toBe(initialY);
+      // Verify it's still visible at the bottom of the viewport
+      expect(scrolledBox.y).toBeGreaterThanOrEqual(0);
+      expect(scrolledBox.y + scrolledBox.height).toBeLessThanOrEqual(viewport!.height + 2);
+    }
+
+    // Verify the pay button is fully visible and clickable
+    const payButton = page.locator(".pay");
+    await expect(payButton).toBeVisible();
+    const payBox = await payButton.boundingBox();
+    expect(payBox).not.toBeNull();
+    if (payBox) {
+      expect(payBox.x + payBox.width).toBeLessThanOrEqual(viewport!.width);
+    }
+  } else {
+    // On desktop, verify the actions footer is NOT fixed and sits after the form
+    const position = await actionsFooter.evaluate((el) => window.getComputedStyle(el).position);
+    expect(position).not.toBe("fixed");
+
+    // Verify actions footer appears after the shipping form in the normal document flow
+    const shippingBox = await shippingForm.boundingBox();
+    const actionsBox = await actionsFooter.boundingBox();
+
+    expect(shippingBox).not.toBeNull();
+    expect(actionsBox).not.toBeNull();
+
+    if (shippingBox && actionsBox) {
+      // Actions should be below the shipping form
+      expect(actionsBox.y).toBeGreaterThanOrEqual(shippingBox.y + shippingBox.height);
+    }
   }
 });
 
