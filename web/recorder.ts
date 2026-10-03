@@ -32,21 +32,25 @@ record.addEventListener("click", async () => {
 stop.addEventListener("click", async () => {
   if (!recorder) return;
   stop.disabled = true;
-  recorder.stop();
-  recorder.stream.getTracks().forEach((track) => track.stop());
+  const recordedRecorder = recorder;
   const seconds = (performance.now() - startedAt) / 1000;
-  const note = new Blob(chunks, { type: recorder.mimeType });
   recorder = null;
 
-  status.textContent = "Sending…";
-  try {
-    const response = await fetch("/api/notes", { method: "POST", headers: { "content-type": note.type || "application/octet-stream" }, body: note });
-    status.textContent = response.ok ? "Sent with your order." : `Not sent (${response.status}). Try again.`;
-  } catch {
-    status.textContent = "Not sent: no connection. Try again.";
-  }
-  const item = document.createElement("li");
-  item.textContent = `Voice note · ${seconds.toFixed(1)} s · ${kilobytes(note.size)}`;
-  notes.prepend(item);
-  record.disabled = false;
+  recordedRecorder.addEventListener("stop", async () => {
+    const note = new Blob(chunks, { type: recordedRecorder.mimeType });
+    status.textContent = "Sending…";
+    try {
+      const response = await fetch("/api/notes", { method: "POST", headers: { "content-type": note.type || "application/octet-stream" }, body: note });
+      status.textContent = response.ok ? "Sent with your order." : `Not sent (${response.status}). Try again.`;
+    } catch {
+      status.textContent = "Not sent: no connection. Try again.";
+    }
+    const item = document.createElement("li");
+    item.textContent = `Voice note · ${seconds.toFixed(1)} s · ${kilobytes(note.size)}`;
+    notes.prepend(item);
+    record.disabled = false;
+  });
+
+  recordedRecorder.stop();
+  recordedRecorder.stream.getTracks().forEach((track) => track.stop());
 });
