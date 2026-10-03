@@ -3,7 +3,7 @@ export function pageCount(total: number, size: number): number {
   return Math.max(1, Math.ceil(total / size));
 }
 
-/** Returns the items of a 1-based page. */
+/** Returns the items of a 1-based page. Throws RangeError if page is out of range. */
 export function getPage<T>(items: T[], page: number, size: number): T[] {
   const pages = pageCount(items.length, size);
   if (page < 1 || page > pages) {

@@ -29,7 +29,9 @@ describe("JSDoc documentation", () => {
 
         // Find the last JSDoc comment before this export
         const beforeExport = content.substring(0, matchIndex);
-        const jsdocMatch = beforeExport.match(/\/\*\*\s*\n?\s*(.+?)\s*\*\//s);
+        const jsdocRegex = /\/\*\*\s*\n?\s*(.+?)\s*\*\//gs;
+        const allMatches = [...beforeExport.matchAll(jsdocRegex)];
+        const jsdocMatch = allMatches.length > 0 ? allMatches[allMatches.length - 1] : null;
 
         expect(jsdocMatch, `${file}: ${itemType} ${itemName} should have JSDoc`).toBeTruthy();
 

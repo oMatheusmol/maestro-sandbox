@@ -7,7 +7,7 @@ export interface CartLine {
   quantity: number;
 }
 
-/** Sums the cart lines; prices arrive as Brazilian-formatted strings. */
+/** Sums the cart lines; prices arrive as Brazilian-formatted strings. Throws RangeError if quantity is invalid. */
 export function cartTotal(lines: CartLine[]): number {
   return lines.reduce((sum, line) => {
     if (!Number.isInteger(line.quantity) || line.quantity <= 0) {

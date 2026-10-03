@@ -13,7 +13,7 @@ export interface Settlement {
   paidOut: number;
 }
 
-/** Daily reconciliation: sum of order totals must match the payout exactly. */
+/** Daily reconciliation: sum of order totals must match the payout exactly. Throws Error on mismatch. */
 export function reconcile(orders: Order[], settlement: Settlement): void {
   const expected = orders
     .filter((o) => settlement.orderIds.includes(o.id))

@@ -3,7 +3,7 @@ export class UpstreamTimeoutError extends Error {
   override name = "UpstreamTimeoutError";
 }
 
-/** Fetches the shipping quote; the carrier API is occasionally slow. */
+/** Fetches the shipping quote; carrier API may timeout. Throws UpstreamTimeoutError on timeout. */
 export async function fetchShippingQuote(
   zip: string,
   timeoutMs = 5000,
