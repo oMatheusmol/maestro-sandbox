@@ -26,4 +26,31 @@ describe("cart", () => {
       /invalid amount: abc/,
     );
   });
+
+  it("throws on negative quantity", () => {
+    expect(() => cartTotal([{ sku: "A", unitPrice: "10,00", quantity: -2 }])).toThrow(
+      RangeError,
+    );
+    expect(() => cartTotal([{ sku: "A", unitPrice: "10,00", quantity: -2 }])).toThrow(
+      /quantity for SKU A must be a positive integer/,
+    );
+  });
+
+  it("throws on zero quantity", () => {
+    expect(() => cartTotal([{ sku: "B", unitPrice: "5,50", quantity: 0 }])).toThrow(
+      RangeError,
+    );
+    expect(() => cartTotal([{ sku: "B", unitPrice: "5,50", quantity: 0 }])).toThrow(
+      /quantity for SKU B must be a positive integer/,
+    );
+  });
+
+  it("throws on non-integer quantity", () => {
+    expect(() => cartTotal([{ sku: "C", unitPrice: "10,00", quantity: 2.5 }])).toThrow(
+      RangeError,
+    );
+    expect(() => cartTotal([{ sku: "C", unitPrice: "10,00", quantity: 2.5 }])).toThrow(
+      /quantity for SKU C must be a positive integer/,
+    );
+  });
 });
