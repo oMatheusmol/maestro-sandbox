@@ -2,7 +2,7 @@ import { formatBRL, parseBRL } from "./money.js";
 
 /** A line in the shopping cart with SKU, unit price in BRL string format, and quantity. */
 export interface CartLine {
-  sku: string;
+  productCode: string;
   unitPrice: string;
   quantity: number;
 }
@@ -11,7 +11,7 @@ export interface CartLine {
 export function cartTotal(lines: CartLine[]): number {
   return lines.reduce((sum, line) => {
     if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
-      throw new RangeError(`quantity for SKU ${line.sku} must be a positive integer`);
+      throw new RangeError(`quantity for product code ${line.productCode} must be a positive integer`);
     }
     return sum + parseBRL(line.unitPrice) * line.quantity;
   }, 0);

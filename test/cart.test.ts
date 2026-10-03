@@ -3,8 +3,8 @@ import { cartTotal, checkoutSummary } from "../src/cart.js";
 
 describe("cart", () => {
   const lines = [
-    { sku: "A", unitPrice: "10,00", quantity: 2 },
-    { sku: "B", unitPrice: "5,50", quantity: 1 },
+    { productCode: "A", unitPrice: "10,00", quantity: 2 },
+    { productCode: "B", unitPrice: "5,50", quantity: 1 },
   ];
 
   it("sums the lines", () => {
@@ -16,41 +16,41 @@ describe("cart", () => {
   });
 
   it("renders the checkout summary for prices with a thousands separator", () => {
-    expect(checkoutSummary([{ sku: "C", unitPrice: "1.234,56", quantity: 1 }])).toBe(
+    expect(checkoutSummary([{ productCode: "C", unitPrice: "1.234,56", quantity: 1 }])).toBe(
       "Total: R$ 1.234,56",
     );
   });
 
   it("throws on an invalid price", () => {
-    expect(() => checkoutSummary([{ sku: "D", unitPrice: "abc", quantity: 1 }])).toThrow(
+    expect(() => checkoutSummary([{ productCode: "D", unitPrice: "abc", quantity: 1 }])).toThrow(
       /invalid amount: abc/,
     );
   });
 
   it("throws on negative quantity", () => {
-    expect(() => cartTotal([{ sku: "A", unitPrice: "10,00", quantity: -2 }])).toThrow(
+    expect(() => cartTotal([{ productCode: "A", unitPrice: "10,00", quantity: -2 }])).toThrow(
       RangeError,
     );
-    expect(() => cartTotal([{ sku: "A", unitPrice: "10,00", quantity: -2 }])).toThrow(
-      /quantity for SKU A must be a positive integer/,
+    expect(() => cartTotal([{ productCode: "A", unitPrice: "10,00", quantity: -2 }])).toThrow(
+      /quantity for product code A must be a positive integer/,
     );
   });
 
   it("throws on zero quantity", () => {
-    expect(() => cartTotal([{ sku: "B", unitPrice: "5,50", quantity: 0 }])).toThrow(
+    expect(() => cartTotal([{ productCode: "B", unitPrice: "5,50", quantity: 0 }])).toThrow(
       RangeError,
     );
-    expect(() => cartTotal([{ sku: "B", unitPrice: "5,50", quantity: 0 }])).toThrow(
-      /quantity for SKU B must be a positive integer/,
+    expect(() => cartTotal([{ productCode: "B", unitPrice: "5,50", quantity: 0 }])).toThrow(
+      /quantity for product code B must be a positive integer/,
     );
   });
 
   it("throws on non-integer quantity", () => {
-    expect(() => cartTotal([{ sku: "C", unitPrice: "10,00", quantity: 2.5 }])).toThrow(
+    expect(() => cartTotal([{ productCode: "C", unitPrice: "10,00", quantity: 2.5 }])).toThrow(
       RangeError,
     );
-    expect(() => cartTotal([{ sku: "C", unitPrice: "10,00", quantity: 2.5 }])).toThrow(
-      /quantity for SKU C must be a positive integer/,
+    expect(() => cartTotal([{ productCode: "C", unitPrice: "10,00", quantity: 2.5 }])).toThrow(
+      /quantity for product code C must be a positive integer/,
     );
   });
 
@@ -61,9 +61,9 @@ describe("cart", () => {
   it("throws when only a later line is invalid", () => {
     expect(() =>
       cartTotal([
-        { sku: "A", unitPrice: "10,00", quantity: 2 },
-        { sku: "B", unitPrice: "5,50", quantity: 0 },
+        { productCode: "A", unitPrice: "10,00", quantity: 2 },
+        { productCode: "B", unitPrice: "5,50", quantity: 0 },
       ]),
-    ).toThrow(/quantity for SKU B must be a positive integer/);
+    ).toThrow(/quantity for product code B must be a positive integer/);
   });
 });

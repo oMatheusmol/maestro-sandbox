@@ -3,7 +3,7 @@ import { reconcile } from "../src/report.js";
 
 describe("reconcile", () => {
   it("accepts a matching settlement", () => {
-    const orders = [{ id: "o1", lines: [{ sku: "A", unitPrice: "10,00", quantity: 1 }] }];
+    const orders = [{ id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] }];
     expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: 10 })).not.toThrow();
   });
 
@@ -12,8 +12,8 @@ describe("reconcile", () => {
       {
         id: "o1",
         lines: [
-          { sku: "A", unitPrice: "0,10", quantity: 1 },
-          { sku: "B", unitPrice: "0,20", quantity: 1 },
+          { productCode: "A", unitPrice: "0,10", quantity: 1 },
+          { productCode: "B", unitPrice: "0,20", quantity: 1 },
         ],
       },
     ];
@@ -21,7 +21,7 @@ describe("reconcile", () => {
   });
 
   it("throws on significant mismatch", () => {
-    const orders = [{ id: "o1", lines: [{ sku: "A", unitPrice: "10,00", quantity: 1 }] }];
+    const orders = [{ id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] }];
     expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: 10.5 })).toThrow(
       /reconciliation mismatch: expected 10, paid out 10.5/,
     );
