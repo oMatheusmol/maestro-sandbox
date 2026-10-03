@@ -30,3 +30,39 @@ export function formatBRL(amount: number): string {
   const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return `R$ ${sign}${grouped},${decimals}`;
 }
+
+export class Money {
+  readonly cents: number;
+
+  constructor(cents: number) {
+    if (!Number.isInteger(cents)) {
+      throw new Error(`cents must be an integer: ${cents}`);
+    }
+    this.cents = cents;
+  }
+
+  static fromBRL(input: string): Money {
+    const amount = parseBRL(input);
+    const cents = Math.round(amount * 100);
+    return new Money(cents);
+  }
+
+  toBRL(): string {
+    return formatBRL(this.cents / 100);
+  }
+
+  add(other: Money): Money {
+    return new Money(this.cents + other.cents);
+  }
+
+  subtract(other: Money): Money {
+    return new Money(this.cents - other.cents);
+  }
+
+  multiplyBy(quantity: number): Money {
+    if (!Number.isFinite(quantity)) {
+      throw new Error(`quantity must be a finite number: ${quantity}`);
+    }
+    return new Money(Math.round(this.cents * quantity));
+  }
+}
