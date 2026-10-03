@@ -3,9 +3,9 @@ import { formatBRL, parseBRL } from "../src/money.js";
 
 /** What the shop sells to everyone who opens the checkout: made-up products and prices. */
 const CART: { name: string; line: CartLine }[] = [
-  { name: "Mechanical keyboard", line: { sku: "KB-87", unitPrice: "899,90", quantity: 1 } },
-  { name: "USB-C cable, 2 m", line: { sku: "USBC-2", unitPrice: "49,90", quantity: 2 } },
-  { name: "Desk mat", line: { sku: "MAT-90", unitPrice: "129,00", quantity: 1 } },
+  { name: "Mechanical keyboard", line: { productCode: "KB-87", unitPrice: "899,90", quantity: 1 } },
+  { name: "USB-C cable, 2 m", line: { productCode: "USBC-2", unitPrice: "49,90", quantity: 2 } },
+  { name: "Desk mat", line: { productCode: "MAT-90", unitPrice: "129,00", quantity: 1 } },
 ];
 
 const lines = document.querySelector<HTMLUListElement>("#lines")!;

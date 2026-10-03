@@ -7,14 +7,14 @@ import { displayName } from "../src/user.js";
 
 const scenarios: Record<string, () => unknown> = {
   checkout: () =>
-    checkoutSummary([{ sku: "TV", unitPrice: "1.234,56", quantity: 1 }]),
+    checkoutSummary([{ productCode: "TV", unitPrice: "1.234,56", quantity: 1 }]),
   "last-page": () => getPage(Array.from({ length: 11 }, (_, i) => i), 3, 5),
   "display-name": () => displayName({ id: "42", name: "Bruno Lima" }),
   "carrier-timeout": () =>
     fetchShippingQuote("01000-000", 10, () => new Promise((r) => setTimeout(() => r(1), 50))),
   reconcile: () =>
     reconcile(
-      [{ id: "o1", lines: [{ sku: "A", unitPrice: "0,10", quantity: 1 }, { sku: "B", unitPrice: "0,20", quantity: 1 }] }],
+      [{ id: "o1", lines: [{ productCode: "A", unitPrice: "0,10", quantity: 1 }, { productCode: "B", unitPrice: "0,20", quantity: 1 }] }],
       { orderIds: ["o1"], paidOut: 0.3 },
     ),
 };
