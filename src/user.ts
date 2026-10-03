@@ -1,8 +1,10 @@
+/** Optional profile information for a user including nickname and avatar URL. */
 export interface UserProfile {
   nickname?: string;
   avatarUrl?: string;
 }
 
+/** A user with an ID, name, and optional profile information. */
 export interface User {
   id: string;
   name: string;

@@ -1,3 +1,4 @@
+/** Error thrown when the upstream carrier API request times out. */
 export class UpstreamTimeoutError extends Error {
   override name = "UpstreamTimeoutError";
 }

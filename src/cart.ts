@@ -1,5 +1,6 @@
 import { formatBRL, parseBRL } from "./money.js";
 
+/** A line in the shopping cart with SKU, unit price in BRL string format, and quantity. */
 export interface CartLine {
   sku: string;
   unitPrice: string;

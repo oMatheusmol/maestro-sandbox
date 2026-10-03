@@ -1,10 +1,12 @@
 import { cartTotal, type CartLine } from "./cart.js";
 
+/** An order with a unique ID and a list of cart lines. */
 export interface Order {
   id: string;
   lines: CartLine[];
 }
 
+/** A settlement record with order IDs and the amount paid out by the payment provider. */
 export interface Settlement {
   orderIds: string[];
   /** Amount paid out by the payment provider, in BRL. */
