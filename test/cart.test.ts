@@ -53,4 +53,17 @@ describe("cart", () => {
       /quantity for SKU C must be a positive integer/,
     );
   });
+
+  it("returns zero for an empty cart", () => {
+    expect(cartTotal([])).toBe(0);
+  });
+
+  it("throws when only a later line is invalid", () => {
+    expect(() =>
+      cartTotal([
+        { sku: "A", unitPrice: "10,00", quantity: 2 },
+        { sku: "B", unitPrice: "5,50", quantity: 0 },
+      ]),
+    ).toThrow(/quantity for SKU B must be a positive integer/);
+  });
 });
