@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBRL, parseBRL, Money } from "../src/money.js";
+import { formatBRL, formatPercent, parseBRL, Money } from "../src/money.js";
 
 describe("money", () => {
   it("parses a simple amount", () => {
@@ -79,6 +79,60 @@ describe("money", () => {
 
   it("throws for negative amount with space between number and decimal comma", () => {
     expect(() => parseBRL("-R$ 12, 50")).toThrow("invalid amount: -R$ 12, 50");
+  });
+});
+
+describe("formatPercent", () => {
+  it("formats a simple ratio", () => {
+    expect(formatPercent(0.125)).toBe("12,5%");
+  });
+
+  it("formats a ratio of 1", () => {
+    expect(formatPercent(1)).toBe("100%");
+  });
+
+  it("formats a ratio of 0", () => {
+    expect(formatPercent(0)).toBe("0%");
+  });
+
+  it("formats a ratio without trailing comma", () => {
+    expect(formatPercent(0.5)).toBe("50%");
+  });
+
+  it("rounds half up for rounding down case", () => {
+    expect(formatPercent(0.1249)).toBe("12,5%");
+  });
+
+  it("rounds half up for rounding up case", () => {
+    expect(formatPercent(0.1251)).toBe("12,5%");
+  });
+
+  it("formats a negative percentage", () => {
+    expect(formatPercent(-0.125)).toBe("-12,5%");
+  });
+
+  it("formats a negative percentage that rounds to whole number", () => {
+    expect(formatPercent(-0.5)).toBe("-50%");
+  });
+
+  it("throws for NaN", () => {
+    expect(() => formatPercent(NaN)).toThrow("invalid amount");
+  });
+
+  it("throws for Infinity", () => {
+    expect(() => formatPercent(Infinity)).toThrow("invalid amount");
+  });
+
+  it("throws for negative Infinity", () => {
+    expect(() => formatPercent(-Infinity)).toThrow("invalid amount");
+  });
+
+  it("formats a small decimal ratio", () => {
+    expect(formatPercent(0.001)).toBe("0,1%");
+  });
+
+  it("formats a large ratio", () => {
+    expect(formatPercent(2.5)).toBe("250%");
   });
 });
 
