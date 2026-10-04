@@ -72,6 +72,14 @@ describe("money", () => {
   it("parses an amount with minus sign before currency symbol and thousands separator", () => {
     expect(parseBRL("-R$ 1.234,56")).toBe(-1234.56);
   });
+
+  it("throws for amount with spaces inside the number", () => {
+    expect(() => parseBRL("1 2 3 4,56")).toThrow("invalid amount: 1 2 3 4,56");
+  });
+
+  it("throws for negative amount with space between number and decimal comma", () => {
+    expect(() => parseBRL("-R$ 12, 50")).toThrow("invalid amount: -R$ 12, 50");
+  });
 });
 
 describe("Money", () => {
