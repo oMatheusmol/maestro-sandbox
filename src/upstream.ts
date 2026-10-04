@@ -14,10 +14,11 @@ export async function fetchShippingQuote(
   if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
     throw new RangeError(`timeoutMs must be a positive integer: ${timeoutMs}`);
   }
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new UpstreamTimeoutError(`carrier timed out after ${timeoutMs}ms`)), timeoutMs),
-  );
-  return Promise.race([fetcher(zip), timeout]);
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new UpstreamTimeoutError(`carrier timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+  return Promise.race([fetcher(zip), timeout]).finally(() => clearTimeout(timeoutId!));
 }
 
 async function defaultFetcher(zip: string): Promise<number> {
