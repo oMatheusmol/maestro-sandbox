@@ -35,6 +35,25 @@ export function formatBRL(amount: number): string {
   return `R$ ${sign}${grouped},${decimals}`;
 }
 
+/**
+ * Formats a ratio as a Brazilian percentage with at most one decimal digit,
+ * e.g. 0.125 -> "12,5%" and 1 -> "100%".
+ */
+export function formatPercent(ratio: number): string {
+  if (!Number.isFinite(ratio)) {
+    throw new Error(`invalid amount: ${ratio}`);
+  }
+  const percentage = ratio * 100;
+  const fixed = percentage.toFixed(1);
+  const sign = fixed.startsWith("-") ? "-" : "";
+  const absoluteValue = fixed.slice(sign.length);
+  const [integer = "", decimals = ""] = absoluteValue.split(".");
+  if (decimals === "0") {
+    return `${sign}${integer}%`;
+  }
+  return `${sign}${integer},${decimals}%`;
+}
+
 export class Money {
   readonly cents: number;
 
