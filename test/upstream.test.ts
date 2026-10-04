@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { fetchShippingQuote } from "../src/upstream.js";
+import { describe, expect, it, vi } from "vitest";
+import { fetchShippingQuote, UpstreamTimeoutError } from "../src/upstream.js";
 
 describe("fetchShippingQuote", () => {
   it("returns the carrier quote", async () => {
@@ -30,5 +30,33 @@ describe("fetchShippingQuote", () => {
     await expect(fetchShippingQuote("01000-000", 1.5)).rejects.toThrow(
       /timeoutMs must be a positive integer/,
     );
+  });
+
+  it("clears the timeout when carrier responds first", async () => {
+    vi.useFakeTimers();
+    try {
+      const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+      const promise = fetchShippingQuote("01000-000", 1000);
+      expect(clearTimeoutSpy).not.toHaveBeenCalled();
+      await promise;
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+    } finally {
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    }
+  });
+
+  it("clears the timeout when carrier times out", async () => {
+    vi.useFakeTimers();
+    try {
+      const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+      const promise = fetchShippingQuote("01000-000", 50, () => new Promise(() => {}));
+      vi.advanceTimersByTime(100);
+      await expect(promise).rejects.toThrow(UpstreamTimeoutError);
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+    } finally {
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    }
   });
 });
