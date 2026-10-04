@@ -29,6 +29,28 @@ for (const screen of SCREENS) {
       await expect(total).toBeVisible();
     }
 
+    // On the checkout screen, verify refund line is visible
+    if (screen.name === "checkout") {
+      const linesList = page.locator("#lines li");
+      await expect(linesList).toHaveCount(4);
+      const refundLine = linesList.last();
+      await expect(refundLine).toContainText("Refund");
+      await expect(refundLine).toContainText("R$ -50,00");
+
+      // On desktop, verify the actions are positioned after the form, not fixed
+      if (viewport?.width === 1280) {
+        const form = page.locator("#shipping");
+        const actions = page.locator(".actions");
+        const formBox = await form.boundingBox();
+        const actionsBox = await actions.boundingBox();
+        expect(formBox).not.toBeNull();
+        expect(actionsBox).not.toBeNull();
+        if (formBox && actionsBox) {
+          expect(actionsBox.y).toBeGreaterThanOrEqual(formBox.y + formBox.height);
+        }
+      }
+    }
+
     await photograph(page, testInfo, screen.name);
   });
 }

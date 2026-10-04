@@ -6,6 +6,7 @@ const CART: { name: string; line: CartLine }[] = [
   { name: "Mechanical keyboard", line: { productCode: "KB-87", unitPrice: "899,90", quantity: 1 } },
   { name: "USB-C cable, 2 m", line: { productCode: "USBC-2", unitPrice: "49,90", quantity: 2 } },
   { name: "Desk mat", line: { productCode: "MAT-90", unitPrice: "129,00", quantity: 1 } },
+  { name: "Refund", line: { productCode: "REFUND-1", unitPrice: "-R$ 50,00", quantity: 1 } },
 ];
 
 const lines = document.querySelector<HTMLUListElement>("#lines")!;

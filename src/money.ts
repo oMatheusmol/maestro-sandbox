@@ -6,12 +6,12 @@ export function parseBRL(input: string): number {
   if (typeof input !== "string") {
     throw new TypeError(`input must be a string: ${typeof input}`);
   }
-  const trimmed = input.trim();
-  if (trimmed === "" || trimmed === "R$") {
+  const noWhitespace = input.replace(/\s/g, "");
+  if (noWhitespace === "" || noWhitespace === "R$" || noWhitespace === "-R$") {
     throw new Error(`invalid amount: ${input}`);
   }
   const result = Number(
-    trimmed.replace("R$", "").trim().replace(/\./g, "").replace(",", "."),
+    noWhitespace.replace("R$", "").replace(/\./g, "").replace(",", "."),
   );
   if (!Number.isFinite(result)) {
     throw new Error(`invalid amount: ${input}`);
