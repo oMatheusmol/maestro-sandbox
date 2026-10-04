@@ -64,6 +64,22 @@ describe("money", () => {
     expect(() => parseBRL(123 as any)).toThrow(TypeError);
     expect(() => parseBRL(123 as any)).toThrow(/input must be a string/);
   });
+
+  it("parses an amount with minus sign before currency symbol", () => {
+    expect(parseBRL("-R$ 12,50")).toBe(-12.5);
+  });
+
+  it("parses an amount with minus sign before currency symbol and thousands separator", () => {
+    expect(parseBRL("-R$ 1.234,56")).toBe(-1234.56);
+  });
+
+  it("throws for amount with spaces inside the number", () => {
+    expect(() => parseBRL("1 2 3 4,56")).toThrow("invalid amount: 1 2 3 4,56");
+  });
+
+  it("throws for negative amount with space between number and decimal comma", () => {
+    expect(() => parseBRL("-R$ 12, 50")).toThrow("invalid amount: -R$ 12, 50");
+  });
 });
 
 describe("Money", () => {
@@ -224,5 +240,10 @@ describe("Money", () => {
     const b = Money.fromBRL("5,00");
     const result = a.add(b).multiplyBy(2).subtract(new Money(50));
     expect(result.toBRL()).toBe("R$ 29,50");
+  });
+
+  it("parses from BRL string with minus sign before currency symbol", () => {
+    const m = Money.fromBRL("-R$ 12,50");
+    expect(m.cents).toBe(-1250);
   });
 });

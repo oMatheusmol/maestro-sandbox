@@ -7,11 +7,12 @@ export function parseBRL(input: string): number {
     throw new TypeError(`input must be a string: ${typeof input}`);
   }
   const trimmed = input.trim();
-  if (trimmed === "" || trimmed === "R$") {
+  if (trimmed === "" || trimmed === "R$" || trimmed === "-R$") {
     throw new Error(`invalid amount: ${input}`);
   }
+  let normalized = trimmed.replace(/^-\s*R\$\s*/, "R$ -");
   const result = Number(
-    trimmed.replace("R$", "").trim().replace(/\./g, "").replace(",", "."),
+    normalized.replace("R$", "").trim().replace(/\./g, "").replace(",", "."),
   );
   if (!Number.isFinite(result)) {
     throw new Error(`invalid amount: ${input}`);

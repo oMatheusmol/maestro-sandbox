@@ -71,4 +71,20 @@ describe("cart", () => {
     expect(() => cartTotal(null as any)).toThrow(TypeError);
     expect(() => cartTotal(null as any)).toThrow(/lines must be an array/);
   });
+
+  it("handles refund lines with minus sign before currency symbol", () => {
+    const lines = [
+      { productCode: "ITEM-1", unitPrice: "100,00", quantity: 1 },
+      { productCode: "REFUND-1", unitPrice: "-R$ 20,00", quantity: 1 },
+    ];
+    expect(cartTotal(lines)).toBe(80);
+  });
+
+  it("renders checkout summary with refund line", () => {
+    const lines = [
+      { productCode: "ITEM-1", unitPrice: "50,00", quantity: 2 },
+      { productCode: "REFUND-1", unitPrice: "-R$ 12,50", quantity: 1 },
+    ];
+    expect(checkoutSummary(lines)).toBe("Total: R$ 87,50");
+  });
 });
