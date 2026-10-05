@@ -11,7 +11,11 @@ export interface Settlement {
   paidOut: number;
 }
 
-/** Daily reconciliation: sum of order totals must match the payout exactly. */
+/**
+ * Daily reconciliation: sum of order totals must match the payout exactly.
+ * @throws {Error} When the settlement names unknown orders, names an order twice,
+ *   or its payout does not match the orders' total.
+ */
 export function reconcile(orders: Order[], settlement: Settlement): void {
   if (!Array.isArray(orders)) {
     throw new TypeError(`orders must be an array: ${typeof orders}`);
@@ -24,6 +28,20 @@ export function reconcile(orders: Order[], settlement: Settlement): void {
   }
   if (!Number.isFinite(settlement.paidOut)) {
     throw new TypeError(`settlement.paidOut must be a finite number: ${settlement.paidOut}`);
+  }
+  const known = new Set(orders.map((o) => o.id));
+  const unknown = [...new Set(settlement.orderIds.filter((id) => !known.has(id)))];
+  if (unknown.length > 0) {
+    throw new Error(`settlement names unknown orders: ${unknown.join(", ")}`);
+  }
+  const seen = new Set<string>();
+  const dupes: string[] = [];
+  for (const id of settlement.orderIds) {
+    if (seen.has(id) && !dupes.includes(id)) dupes.push(id);
+    seen.add(id);
+  }
+  if (dupes.length > 0) {
+    throw new Error(`settlement names an order twice: ${dupes.join(", ")}`);
   }
   const expected = orders
     .filter((o) => settlement.orderIds.includes(o.id))
