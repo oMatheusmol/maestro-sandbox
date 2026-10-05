@@ -27,6 +27,62 @@ describe("reconcile", () => {
     );
   });
 
+  it("throws naming a settlement id that matches no order", () => {
+    const orders = [{ id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] }];
+    const settlement = { orderIds: ["o1", "o-9"], paidOut: 10 };
+    expect(() => reconcile(orders, settlement)).toThrow(Error);
+    expect(() => reconcile(orders, settlement)).toThrow(/^settlement names unknown orders: o-9$/);
+  });
+
+  it("names every unknown id in settlement order, before comparing amounts", () => {
+    const orders = [{ id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] }];
+    const settlement = { orderIds: ["o-9", "o1", "o-12"], paidOut: 99 };
+    expect(() => reconcile(orders, settlement)).toThrow(Error);
+    expect(() => reconcile(orders, settlement)).toThrow(
+      /^settlement names unknown orders: o-9, o-12$/,
+    );
+  });
+
+  it("throws naming an id the settlement repeats", () => {
+    const orders = [
+      { id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] },
+      { id: "o-3", lines: [{ productCode: "B", unitPrice: "5,00", quantity: 1 }] },
+    ];
+    const settlement = { orderIds: ["o-3", "o1", "o-3"], paidOut: 15 };
+    expect(() => reconcile(orders, settlement)).toThrow(Error);
+    expect(() => reconcile(orders, settlement)).toThrow(/^settlement names an order twice: o-3$/);
+  });
+
+  it("lists an unknown id the settlement repeats only once", () => {
+    const orders = [{ id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] }];
+    const settlement = { orderIds: ["o-9", "o1", "o-9"], paidOut: 10 };
+    expect(() => reconcile(orders, settlement)).toThrow(Error);
+    expect(() => reconcile(orders, settlement)).toThrow(/^settlement names unknown orders: o-9$/);
+  });
+
+  it("lists several repeated ids in the order the repeats happen", () => {
+    const orders = [
+      { id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] },
+      { id: "o2", lines: [{ productCode: "B", unitPrice: "5,00", quantity: 1 }] },
+    ];
+    const settlement = { orderIds: ["o2", "o1", "o1", "o2"], paidOut: 15 };
+    expect(() => reconcile(orders, settlement)).toThrow(Error);
+    expect(() => reconcile(orders, settlement)).toThrow(/^settlement names an order twice: o1, o2$/);
+  });
+
+  it("accepts a settlement whose ids all match and still checks its amount", () => {
+    const orders = [
+      { id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] },
+      { id: "o2", lines: [{ productCode: "B", unitPrice: "5,00", quantity: 2 }] },
+      { id: "o3", lines: [{ productCode: "C", unitPrice: "1,50", quantity: 1 }] },
+    ];
+    const orderIds = ["o3", "o1", "o2"];
+    expect(() => reconcile(orders, { orderIds, paidOut: 21.5 })).not.toThrow();
+    expect(() => reconcile(orders, { orderIds, paidOut: 20 })).toThrow(
+      /^reconciliation mismatch: expected 21.5, paid out 20$/,
+    );
+  });
+
   it("throws when orders is not an array", () => {
     expect(() => reconcile(null as any, { orderIds: [], paidOut: 0 })).toThrow(TypeError);
     expect(() => reconcile(null as any, { orderIds: [], paidOut: 0 })).toThrow(
