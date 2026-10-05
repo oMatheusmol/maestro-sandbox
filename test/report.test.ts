@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Money } from "../src/money.js";
-import { reconcile } from "../src/report.js";
+import { reconcile, type Settlement } from "../src/report.js";
 
 describe("reconcile", () => {
   const money = (value: string) => Money.fromBRL(value);
@@ -9,10 +9,10 @@ describe("reconcile", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
     ];
-    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: 10 })).not.toThrow();
+    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("10,00") })).not.toThrow();
   });
 
-  it("tolerates floating-point precision issues", () => {
+  it("reconciles decimal totals with exact cents", () => {
     const orders = [
       {
         id: "o1",
@@ -22,24 +22,24 @@ describe("reconcile", () => {
         ],
       },
     ];
-    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: 0.3 })).not.toThrow();
+    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("0,30") })).not.toThrow();
   });
 
   it("throws on significant mismatch", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
     ];
-    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: 10.5 })).toThrow(
-      /reconciliation mismatch: expected 10, paid out 10.5/,
+    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("10,50") })).toThrow(
+      /reconciliation mismatch: expected R\$ 10,00, paid out R\$ 10,50/,
     );
   });
 
-  it("throws on a payout mismatch below half a cent", () => {
+  it("throws on an exact cents payout mismatch without tolerance", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
     ];
-    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: 10.004 })).toThrow(
-      /^reconciliation mismatch: expected 10, paid out 10.004$/,
+    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("10,01") })).toThrow(
+      /^reconciliation mismatch: expected R\$ 10,00, paid out R\$ 10,01$/,
     );
   });
 
@@ -47,7 +47,7 @@ describe("reconcile", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
     ];
-    const settlement = { orderIds: ["o1", "o-9"], paidOut: 10 };
+    const settlement = { orderIds: ["o1", "o-9"], paidOut: money("10,00") };
     expect(() => reconcile(orders, settlement)).toThrow(Error);
     expect(() => reconcile(orders, settlement)).toThrow(/^settlement names unknown orders: o-9$/);
   });
@@ -56,7 +56,7 @@ describe("reconcile", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
     ];
-    const settlement = { orderIds: ["o-9", "o1", "o-12"], paidOut: 99 };
+    const settlement = { orderIds: ["o-9", "o1", "o-12"], paidOut: money("99,00") };
     expect(() => reconcile(orders, settlement)).toThrow(Error);
     expect(() => reconcile(orders, settlement)).toThrow(
       /^settlement names unknown orders: o-9, o-12$/,
@@ -68,7 +68,7 @@ describe("reconcile", () => {
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
       { id: "o-3", lines: [{ productCode: "B", unitPrice: money("5,00"), quantity: 1 }] },
     ];
-    const settlement = { orderIds: ["o-3", "o1", "o-3"], paidOut: 15 };
+    const settlement = { orderIds: ["o-3", "o1", "o-3"], paidOut: money("15,00") };
     expect(() => reconcile(orders, settlement)).toThrow(Error);
     expect(() => reconcile(orders, settlement)).toThrow(/^settlement names an order twice: o-3$/);
   });
@@ -77,7 +77,7 @@ describe("reconcile", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
     ];
-    const settlement = { orderIds: ["o-9", "o1", "o-9"], paidOut: 10 };
+    const settlement = { orderIds: ["o-9", "o1", "o-9"], paidOut: money("10,00") };
     expect(() => reconcile(orders, settlement)).toThrow(Error);
     expect(() => reconcile(orders, settlement)).toThrow(/^settlement names unknown orders: o-9$/);
   });
@@ -87,7 +87,7 @@ describe("reconcile", () => {
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
       { id: "o2", lines: [{ productCode: "B", unitPrice: money("5,00"), quantity: 1 }] },
     ];
-    const settlement = { orderIds: ["o2", "o1", "o1", "o2"], paidOut: 15 };
+    const settlement = { orderIds: ["o2", "o1", "o1", "o2"], paidOut: money("15,00") };
     expect(() => reconcile(orders, settlement)).toThrow(Error);
     expect(() => reconcile(orders, settlement)).toThrow(/^settlement names an order twice: o1, o2$/);
   });
@@ -99,15 +99,17 @@ describe("reconcile", () => {
       { id: "o3", lines: [{ productCode: "C", unitPrice: money("1,50"), quantity: 1 }] },
     ];
     const orderIds = ["o3", "o1", "o2"];
-    expect(() => reconcile(orders, { orderIds, paidOut: 21.5 })).not.toThrow();
-    expect(() => reconcile(orders, { orderIds, paidOut: 20 })).toThrow(
-      /^reconciliation mismatch: expected 21.5, paid out 20$/,
+    expect(() => reconcile(orders, { orderIds, paidOut: money("21,50") })).not.toThrow();
+    expect(() => reconcile(orders, { orderIds, paidOut: money("20,00") })).toThrow(
+      /^reconciliation mismatch: expected R\$ 21,50, paid out R\$ 20,00$/,
     );
   });
 
   it("throws when orders is not an array", () => {
-    expect(() => reconcile(null as any, { orderIds: [], paidOut: 0 })).toThrow(TypeError);
-    expect(() => reconcile(null as any, { orderIds: [], paidOut: 0 })).toThrow(
+    expect(() => reconcile(null as any, { orderIds: [], paidOut: money("0,00") })).toThrow(
+      TypeError,
+    );
+    expect(() => reconcile(null as any, { orderIds: [], paidOut: money("0,00") })).toThrow(
       /orders must be an array/,
     );
   });
@@ -120,17 +122,20 @@ describe("reconcile", () => {
 
   it("throws when settlement.orderIds is not an array", () => {
     const orders: any[] = [];
-    expect(() => reconcile(orders, { orderIds: null, paidOut: 0 } as any)).toThrow(TypeError);
-    expect(() => reconcile(orders, { orderIds: null, paidOut: 0 } as any)).toThrow(
+    expect(() => reconcile(orders, { orderIds: null, paidOut: money("0,00") } as any)).toThrow(
+      TypeError,
+    );
+    expect(() => reconcile(orders, { orderIds: null, paidOut: money("0,00") } as any)).toThrow(
       /settlement.orderIds must be an array/,
     );
   });
 
-  it("throws when settlement.paidOut is not a finite number", () => {
+  it("throws when settlement.paidOut is not Money", () => {
     const orders: any[] = [];
-    expect(() => reconcile(orders, { orderIds: [], paidOut: NaN })).toThrow(TypeError);
-    expect(() => reconcile(orders, { orderIds: [], paidOut: NaN })).toThrow(
-      /settlement.paidOut must be a finite number/,
+    const settlement = { orderIds: [], paidOut: NaN } as unknown as Settlement;
+    expect(() => reconcile(orders, settlement)).toThrow(TypeError);
+    expect(() => reconcile(orders, settlement)).toThrow(
+      /settlement.paidOut must be Money/,
     );
   });
 });

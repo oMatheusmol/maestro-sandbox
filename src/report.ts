@@ -1,4 +1,5 @@
 import { cartTotal, type CartLine } from "./cart.js";
+import { Money } from "./money.js";
 
 export interface Order {
   id: string;
@@ -7,8 +8,8 @@ export interface Order {
 
 export interface Settlement {
   orderIds: string[];
-  /** Amount paid out by the payment provider, in BRL. */
-  paidOut: number;
+  /** Amount paid out by the payment provider. */
+  paidOut: Money;
 }
 
 /**
@@ -26,8 +27,8 @@ export function reconcile(orders: Order[], settlement: Settlement): void {
   if (!Array.isArray(settlement.orderIds)) {
     throw new TypeError(`settlement.orderIds must be an array: ${typeof settlement.orderIds}`);
   }
-  if (!Number.isFinite(settlement.paidOut)) {
-    throw new TypeError(`settlement.paidOut must be a finite number: ${settlement.paidOut}`);
+  if (!(settlement.paidOut instanceof Money)) {
+    throw new TypeError(`settlement.paidOut must be Money: ${settlement.paidOut}`);
   }
   const known = new Set(orders.map((o) => o.id));
   const unknown = [...new Set(settlement.orderIds.filter((id) => !known.has(id)))];
@@ -45,11 +46,10 @@ export function reconcile(orders: Order[], settlement: Settlement): void {
   }
   const expected = orders
     .filter((o) => settlement.orderIds.includes(o.id))
-    .reduce((sum, o) => sum + cartTotal(o.lines).cents, 0);
-  const paidOut = settlement.paidOut * 100;
-  if (expected !== paidOut) {
+    .reduce((sum, o) => sum.add(cartTotal(o.lines)), new Money(0));
+  if (expected.cents !== settlement.paidOut.cents) {
     throw new Error(
-      `reconciliation mismatch: expected ${expected / 100}, paid out ${settlement.paidOut}`,
+      `reconciliation mismatch: expected ${expected.toBRL()}, paid out ${settlement.paidOut.toBRL()}`,
     );
   }
 }
