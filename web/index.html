@@ -27,7 +27,10 @@
         <label>CEP <input name="cep" inputmode="numeric" autocomplete="postal-code" pattern="\d{5}-?\d{3}" required /></label>
       </form>
       <div class="actions">
-        <p class="total" id="total"></p>
+        <div class="summary">
+          <p class="total" id="total"></p>
+          <p class="free-shipping" id="free-shipping"></p>
+        </div>
         <button class="pay" id="pay" type="submit" form="shipping"></button>
       </div>
       <p class="placed" id="placed" role="status"></p>
