@@ -26,7 +26,7 @@ const scenarios: Record<string, () => unknown> = {
           ],
         },
       ],
-      { orderIds: ["o1"], paidOut: 0.3 },
+      { orderIds: ["o1"], paidOut: Money.fromBRL("0,30") },
     ),
 };
 
