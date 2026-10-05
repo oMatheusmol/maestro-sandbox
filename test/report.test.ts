@@ -53,6 +53,23 @@ describe("reconcile", () => {
     expect(() => reconcile(orders, settlement)).toThrow(/^settlement names an order twice: o-3$/);
   });
 
+  it("lists an unknown id the settlement repeats only once", () => {
+    const orders = [{ id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] }];
+    const settlement = { orderIds: ["o-9", "o1", "o-9"], paidOut: 10 };
+    expect(() => reconcile(orders, settlement)).toThrow(Error);
+    expect(() => reconcile(orders, settlement)).toThrow(/^settlement names unknown orders: o-9$/);
+  });
+
+  it("lists several repeated ids in the order the repeats happen", () => {
+    const orders = [
+      { id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] },
+      { id: "o2", lines: [{ productCode: "B", unitPrice: "5,00", quantity: 1 }] },
+    ];
+    const settlement = { orderIds: ["o2", "o1", "o1", "o2"], paidOut: 15 };
+    expect(() => reconcile(orders, settlement)).toThrow(Error);
+    expect(() => reconcile(orders, settlement)).toThrow(/^settlement names an order twice: o1, o2$/);
+  });
+
   it("accepts a settlement whose ids all match and still checks its amount", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: "10,00", quantity: 1 }] },
