@@ -45,9 +45,11 @@ export function reconcile(orders: Order[], settlement: Settlement): void {
   }
   const expected = orders
     .filter((o) => settlement.orderIds.includes(o.id))
-    .reduce((sum, o) => sum + cartTotal(o.lines), 0);
-  const epsilon = 1e-9;
-  if (Math.abs(expected - settlement.paidOut) > epsilon) {
-    throw new Error(`reconciliation mismatch: expected ${expected}, paid out ${settlement.paidOut}`);
+    .reduce((sum, o) => sum + cartTotal(o.lines).cents, 0);
+  const paidOut = settlement.paidOut * 100;
+  if (expected !== paidOut) {
+    throw new Error(
+      `reconciliation mismatch: expected ${expected / 100}, paid out ${settlement.paidOut}`,
+    );
   }
 }

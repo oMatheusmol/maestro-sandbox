@@ -1,8 +1,8 @@
-import { formatBRL, parseBRL } from "./money.js";
+import { Money } from "./money.js";
 
 export interface CartLine {
   productCode: string;
-  unitPrice: string;
+  unitPrice: Money;
   quantity: number;
 }
 
@@ -25,9 +25,11 @@ export function mergeLines(lines: CartLine[]): CartLine[] {
       merged.set(line.productCode, { ...line });
       continue;
     }
-    if (parseBRL(line.unitPrice) !== parseBRL(first.unitPrice)) {
+    if (line.unitPrice.cents !== first.unitPrice.cents) {
+      const firstPrice = first.unitPrice.toBRL();
+      const linePrice = line.unitPrice.toBRL();
       throw new RangeError(
-        `product code ${line.productCode} has two prices: ${first.unitPrice} and ${line.unitPrice}`,
+        `product code ${line.productCode} has two prices: ${firstPrice} and ${linePrice}`,
       );
     }
     first.quantity += line.quantity;
@@ -35,12 +37,15 @@ export function mergeLines(lines: CartLine[]): CartLine[] {
   return [...merged.values()];
 }
 
-/** Sums the cart lines; prices arrive as Brazilian-formatted strings. */
-export function cartTotal(lines: CartLine[]): number {
-  return mergeLines(lines).reduce((sum, line) => sum + parseBRL(line.unitPrice) * line.quantity, 0);
+/** Sums the cart lines using integer cents. */
+export function cartTotal(lines: CartLine[]): Money {
+  return mergeLines(lines).reduce(
+    (sum, line) => sum.add(line.unitPrice.multiplyBy(line.quantity)),
+    new Money(0),
+  );
 }
 
 /** Human-readable total shown at checkout. */
 export function checkoutSummary(lines: CartLine[]): string {
-  return `Total: ${formatBRL(cartTotal(lines))}`;
+  return `Total: ${cartTotal(lines).toBRL()}`;
 }
