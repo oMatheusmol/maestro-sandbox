@@ -34,6 +34,15 @@ describe("reconcile", () => {
     );
   });
 
+  it("throws on a payout mismatch below half a cent", () => {
+    const orders = [
+      { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
+    ];
+    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: 10.004 })).toThrow(
+      /^reconciliation mismatch: expected 10, paid out 10.004$/,
+    );
+  });
+
   it("throws naming a settlement id that matches no order", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
