@@ -1,5 +1,6 @@
 import { cartTotal, checkoutSummary, type CartLine } from "../src/cart.js";
 import { formatBRL, parseBRL } from "../src/money.js";
+import { freeShipping, shippingNote } from "../src/shipping.js";
 
 /** What the shop sells to everyone who opens the checkout: made-up products and prices. */
 const CART: { name: string; line: CartLine }[] = [
@@ -10,6 +11,7 @@ const CART: { name: string; line: CartLine }[] = [
 
 const lines = document.querySelector<HTMLUListElement>("#lines")!;
 const total = document.querySelector<HTMLParagraphElement>("#total")!;
+const shipping = document.querySelector<HTMLParagraphElement>("#free-shipping")!;
 const pay = document.querySelector<HTMLButtonElement>("#pay")!;
 const form = document.querySelector<HTMLFormElement>("#shipping")!;
 const placed = document.querySelector<HTMLParagraphElement>("#placed")!;
@@ -26,8 +28,11 @@ for (const { name, line } of CART) {
 }
 
 const cart = CART.map((c) => c.line);
+const amount = cartTotal(cart);
 total.textContent = checkoutSummary(cart);
-pay.textContent = `Place order and pay ${formatBRL(cartTotal(cart))}`;
+shipping.textContent = shippingNote(amount);
+shipping.classList.toggle("badge", freeShipping(amount));
+pay.textContent = `Place order and pay ${formatBRL(amount)}`;
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();

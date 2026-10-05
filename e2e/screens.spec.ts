@@ -33,6 +33,27 @@ for (const screen of SCREENS) {
   });
 }
 
+test("shows the free shipping badge under the total", async ({ page, viewport }, testInfo) => {
+  await page.goto("/");
+
+  const note = page.locator("#free-shipping");
+  await expect(note).toBeVisible();
+  await expect(note).toHaveText("Free shipping");
+  await expect(note).toHaveClass(/\bbadge\b/);
+
+  const noteBox = await note.boundingBox();
+  const totalBox = await page.locator("#total").boundingBox();
+  expect(noteBox).not.toBeNull();
+  expect(totalBox).not.toBeNull();
+  if (noteBox && totalBox && viewport) {
+    expect(noteBox.y).toBeGreaterThanOrEqual(totalBox.y + totalBox.height);
+    expect(noteBox.x).toBeGreaterThanOrEqual(0);
+    expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(viewport.width);
+  }
+
+  await photograph(page, testInfo, "checkout");
+});
+
 test("records a voice note with audio data", async ({ page, context }) => {
   await context.grantPermissions(["microphone"]);
   await page.goto("/recorder.html");
