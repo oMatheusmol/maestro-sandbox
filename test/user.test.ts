@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName } from "../src/user.js";
+import { displayName, userInitials, type User } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -67,5 +67,40 @@ describe("displayName", () => {
     expect(() => displayName({ id: "1", name: "" })).toThrow(
       /user.name must be a non-empty string/,
     );
+  });
+});
+
+describe("userInitials", () => {
+  it("uses the first and last words of a full name", () => {
+    expect(userInitials({ id: "1", name: "ana maria souza" })).toBe("AS");
+  });
+
+  it("prefers the nickname", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza", profile: { nickname: "bruno lima" } })).toBe("BL");
+  });
+
+  it("handles surrounding and mixed internal whitespace", () => {
+    expect(userInitials({ id: "1", name: " \tana  maria\t\nsouza \n" })).toBe("AS");
+  });
+
+  it("returns one uppercase initial for a single word", () => {
+    expect(userInitials({ id: "1", name: "ana" })).toBe("A");
+  });
+
+  it("returns an empty string for a whitespace-only displayed name", () => {
+    expect(userInitials({ id: "1", name: " \t\n " })).toBe("");
+  });
+
+  it.each([
+    [null, "user must be an object: object"],
+    [undefined, "user must be an object: undefined"],
+    [42, "user must be an object: number"],
+    [{ id: "", name: "Ana Souza" }, "user.id must be a non-empty string: "],
+    [{ id: 42, name: "Ana Souza" }, "user.id must be a non-empty string: 42"],
+    [{ id: "1", name: "" }, "user.name must be a non-empty string: "],
+    [{ id: "1", name: 42 }, "user.name must be a non-empty string: 42"],
+  ])("preserves validation for %j", (user, message) => {
+    expect(() => userInitials(user as unknown as User)).toThrow(TypeError);
+    expect(() => userInitials(user as unknown as User)).toThrow(new TypeError(message));
   });
 });

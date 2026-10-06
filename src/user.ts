@@ -23,3 +23,12 @@ export function displayName(user: User): string {
   const nickname = user.profile?.nickname?.trim();
   return nickname && nickname.length > 0 ? nickname : user.name;
 }
+
+export function userInitials(user: User): string {
+  const name = displayName(user).trim();
+  if (!name) return "";
+  const words = name.split(/\s+/);
+  const first = name.charAt(0);
+  const last = words.length > 1 ? words[words.length - 1]?.charAt(0) ?? "" : "";
+  return (first + last).toUpperCase();
+}
