@@ -9,6 +9,18 @@ export function pageCount(total: number, size: number): number {
   return Math.max(1, Math.ceil(total / size));
 }
 
+/** Whether another 1-based page exists. */
+export function hasNextPage(total: number, page: number, size: number): boolean {
+  if (!Number.isInteger(page) || page <= 0) {
+    throw new RangeError(`page must be a positive integer: ${page}`);
+  }
+  const pages = pageCount(total, size);
+  if (page > pages) {
+    throw new RangeError(`page ${page} out of range (1..${pages})`);
+  }
+  return page < pages;
+}
+
 /** Returns the items of a 1-based page. */
 export function getPage<T>(items: T[], page: number, size: number): T[] {
   if (!Array.isArray(items)) {
