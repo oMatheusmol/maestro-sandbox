@@ -7,6 +7,22 @@ const SCREENS = [
   { name: "recorder", path: "/recorder.html", heading: "Voice note" },
 ];
 
+test("keeps the shared page background blue across navigation", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 255)");
+  await photograph(page, testInfo, "checkout");
+
+  await page.getByRole("link", { name: "Voice note", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 255)");
+  await photograph(page, testInfo, "recorder");
+
+  await page.getByRole("link", { name: "Checkout", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 255)");
+});
+
 for (const screen of SCREENS) {
   test(`opens the ${screen.name} screen`, async ({ page, viewport }, testInfo) => {
     await page.goto(screen.path);
