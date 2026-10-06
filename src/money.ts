@@ -82,6 +82,19 @@ export class Money {
     return new Money(this.cents - other.cents);
   }
 
+  allocate(parts: number): Money[] {
+    if (!Number.isSafeInteger(parts) || parts <= 0) {
+      throw new Error(`parts must be a positive safe integer: ${parts}`);
+    }
+    const absoluteCents = Math.abs(this.cents);
+    const base = Math.floor(absoluteCents / parts);
+    const remainder = absoluteCents % parts;
+    return Array.from({ length: parts }, (_, index) => {
+      const cents = base + (index < remainder ? 1 : 0);
+      return new Money(this.cents < 0 && cents !== 0 ? -cents : cents);
+    });
+  }
+
   multiplyBy(quantity: number): Money {
     if (!Number.isFinite(quantity)) {
       throw new Error(`quantity must be a finite number: ${quantity}`);

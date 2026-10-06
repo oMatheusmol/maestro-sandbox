@@ -137,6 +137,48 @@ describe("formatPercent", () => {
 });
 
 describe("Money", () => {
+  it.each([
+    [5, 2, [3, 2]],
+    [-5, 2, [-3, -2]],
+    [6, 3, [2, 2, 2]],
+    [-6, 3, [-2, -2, -2]],
+    [0, 3, [0, 0, 0]],
+    [5, 1, [5]],
+    [-5, 1, [-5]],
+    [2, 4, [1, 1, 0, 0]],
+    [-2, 4, [-1, -1, 0, 0]],
+    [8, 3, [3, 3, 2]],
+    [-8, 3, [-3, -3, -2]],
+  ])("allocates %i cents across %i recipients", (cents, parts, expected) => {
+    const source = new Money(cents);
+    const shares = source.allocate(parts);
+    expect(shares.map((share) => share.cents)).toEqual(expected);
+    for (const share of shares) {
+      expect(share).toBeInstanceOf(Money);
+      expect(share).not.toBe(source);
+    }
+    expect(source.cents).toBe(cents);
+  });
+
+  it("conserves cents across signed amounts and recipient counts", () => {
+    for (const cents of [-1001, -17, -1, 0, 1, 17, 1001]) {
+      for (const parts of [1, 2, 3, 7, 20]) {
+        const shares = new Money(cents).allocate(parts);
+        expect(shares).toHaveLength(parts);
+        expect(shares.reduce((sum, share) => sum + share.cents, 0)).toBe(cents);
+      }
+    }
+  });
+
+  it.each([0, -1, 1.5, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1])(
+    "rejects invalid allocation parts %s",
+    (parts) => {
+      expect(() => new Money(5).allocate(parts)).toThrow(
+        "parts must be a positive safe integer",
+      );
+    },
+  );
+
   it("constructs from integer cents", () => {
     const m = new Money(1250);
     expect(m.cents).toBe(1250);
