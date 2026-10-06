@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type CartLine, cartTotal, checkoutSummary, mergeLines } from "../src/cart.js";
+import { type CartLine, cartQuantity, cartTotal, checkoutSummary, mergeLines } from "../src/cart.js";
 import { Money } from "../src/money.js";
 
 describe("cart", () => {
@@ -94,6 +94,53 @@ describe("cart", () => {
       { productCode: "REFUND-1", unitPrice: money("-R$ 12,50"), quantity: 1 },
     ];
     expect(checkoutSummary(lines)).toBe("Total: R$ 87,50");
+  });
+});
+
+describe("cartQuantity", () => {
+  it("sums quantities across all lines, including repeated codes", () => {
+    expect(
+      cartQuantity([
+        { productCode: "A", unitPrice: new Money(100), quantity: 2 },
+        { productCode: "B", unitPrice: new Money(200), quantity: 3 },
+        { productCode: "A", unitPrice: new Money(300), quantity: 4 },
+      ]),
+    ).toBe(9);
+  });
+
+  it("returns zero for an empty cart", () => {
+    expect(cartQuantity([])).toBe(0);
+  });
+
+  it.each([2.5, 0, -2])("rejects a later quantity of %s", (quantity) => {
+    const lines = [
+      { productCode: "A", unitPrice: new Money(100), quantity: 2 },
+      { productCode: "B", unitPrice: new Money(200), quantity },
+    ];
+    expect(() => cartQuantity(lines)).toThrow(RangeError);
+    expect(() => cartQuantity(lines)).toThrow("quantity for product code B must be a positive integer");
+  });
+
+  it.each([null, undefined, {}, "cart", 1])("rejects non-array input %s", (input) => {
+    expect(() => cartQuantity(input as unknown as CartLine[])).toThrow(TypeError);
+    expect(() => cartQuantity(input as unknown as CartLine[])).toThrow(
+      `lines must be an array: ${typeof input}`,
+    );
+  });
+
+  it("counts and validates quantities without accessing unit prices", () => {
+    const line: CartLine = {
+      productCode: "A",
+      quantity: 2,
+      get unitPrice(): Money {
+        throw new Error("unitPrice must not be accessed");
+      },
+    };
+    expect(cartQuantity([line, line])).toBe(4);
+    line.quantity = 0;
+    expect(() => cartQuantity([line])).toThrow(
+      "quantity for product code A must be a positive integer",
+    );
   });
 });
 

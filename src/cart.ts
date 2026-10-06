@@ -37,6 +37,21 @@ export function mergeLines(lines: CartLine[]): CartLine[] {
   return [...merged.values()];
 }
 
+/** Sums quantities without inspecting unit prices. */
+export function cartQuantity(lines: CartLine[]): number {
+  if (!Array.isArray(lines)) {
+    throw new TypeError(`lines must be an array: ${typeof lines}`);
+  }
+  let quantity = 0;
+  for (const line of lines) {
+    if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
+      throw new RangeError(`quantity for product code ${line.productCode} must be a positive integer`);
+    }
+    quantity += line.quantity;
+  }
+  return quantity;
+}
+
 /** Sums the cart lines using integer cents. */
 export function cartTotal(lines: CartLine[]): Money {
   return mergeLines(lines).reduce(
