@@ -10,3 +10,44 @@ pnpm exec playwright install chromium   # uma vez: o navegador dos testes de int
 pnpm test:ui                            # testes de interface (Playwright), num celular e num desktop
 SENTRY_DSN=... pnpm trigger <cenário> [repetições]
 ```
+
+## Money
+
+`Money` from `src/money.ts` stores amounts as integer cents in its readonly
+`cents` property. Construct it with cents, or parse a Brazilian real amount
+with `Money.fromBRL`. Use `toBRL()` to format an amount for display.
+
+```ts
+import { Money } from "./src/money.js";
+
+const price = new Money(1250);
+price.cents; // 1250
+price.toBRL(); // "R$ 12,50"
+
+const parsed = Money.fromBRL("R$ 1.234,56");
+parsed.cents; // 123456
+parsed.toBRL(); // "R$ 1.234,56"
+
+Money.fromBRL("-R$ 12,50").toBRL(); // "R$ -12,50"
+```
+
+The constructor rejects fractional cents. `fromBRL` rounds parsed amounts to
+the nearest cent and throws for invalid amounts such as `"invalid"`.
+
+`add`, `subtract`, and `multiplyBy` return new `Money` instances, leaving their
+operands unchanged. Multiplication rounds the result to integer cents and
+requires a finite quantity.
+
+```ts
+const fee = new Money(250);
+const total = price.add(fee);
+total.toBRL(); // "R$ 15,00"
+total === price; // false
+
+price.subtract(fee).toBRL(); // "R$ 10,00"
+price.multiplyBy(3).toBRL(); // "R$ 37,50"
+new Money(101).multiplyBy(0.5).cents; // 51
+
+price.cents; // 1250 (unchanged)
+fee.cents; // 250 (unchanged)
+```
