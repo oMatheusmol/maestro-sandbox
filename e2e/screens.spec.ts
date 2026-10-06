@@ -12,6 +12,12 @@ for (const screen of SCREENS) {
     await page.goto(screen.path);
     await expect(page.getByRole("heading", { level: 1, name: screen.heading })).toBeVisible();
 
+    if (screen.name === "checkout") {
+      const total = page.locator("#total");
+      await expect(total).toBeVisible();
+      await expect(total).toHaveText("Total do pedido: R$ 1.128,70");
+    }
+
     // On the checkout screen, verify the pay button is fully visible on narrow screens
     if (screen.name === "checkout" && viewport?.width === 375) {
       const payButton = page.locator(".pay");

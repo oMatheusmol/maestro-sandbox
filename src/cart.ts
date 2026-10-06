@@ -47,5 +47,5 @@ export function cartTotal(lines: CartLine[]): Money {
 
 /** Human-readable total shown at checkout. */
 export function checkoutSummary(lines: CartLine[]): string {
-  return `Total: ${cartTotal(lines).toBRL()}`;
+  return `Total do pedido: ${cartTotal(lines).toBRL()}`;
 }
