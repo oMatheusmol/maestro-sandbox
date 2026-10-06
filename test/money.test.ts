@@ -170,6 +170,19 @@ describe("Money", () => {
     }
   });
 
+  it.each([1, -1])("conserves large cent amounts with sign %i", (sign) => {
+    const source = new Money(sign * 18014398509481988);
+    const shares = source.allocate(3);
+    expect(shares.map((share) => share.cents)).toEqual(
+      [6004799503160663, 6004799503160663, 6004799503160662].map(
+        (cents) => sign * cents,
+      ),
+    );
+    expect(shares.reduce((sum, share) => sum + BigInt(share.cents), 0n)).toBe(
+      BigInt(source.cents),
+    );
+  });
+
   it.each([0, -1, 1.5, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1])(
     "rejects invalid allocation parts %s",
     (parts) => {

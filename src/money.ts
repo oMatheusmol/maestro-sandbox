@@ -86,11 +86,12 @@ export class Money {
     if (!Number.isSafeInteger(parts) || parts <= 0) {
       throw new Error(`parts must be a positive safe integer: ${parts}`);
     }
-    const absoluteCents = Math.abs(this.cents);
-    const base = Math.floor(absoluteCents / parts);
-    const remainder = absoluteCents % parts;
+    const absoluteCents = BigInt(Math.abs(this.cents));
+    const divisor = BigInt(parts);
+    const base = absoluteCents / divisor;
+    const remainder = Number(absoluteCents % divisor);
     return Array.from({ length: parts }, (_, index) => {
-      const cents = base + (index < remainder ? 1 : 0);
+      const cents = Number(base + (index < remainder ? 1n : 0n));
       return new Money(this.cents < 0 && cents !== 0 ? -cents : cents);
     });
   }
