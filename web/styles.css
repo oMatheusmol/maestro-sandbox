@@ -3,7 +3,7 @@
   --fg: #1d1f23;
   --muted: #5f6672;
   --line: #e3e5e9;
-  --bg: #f6f7f9;
+  --bg: #0000ff;
   --card: #ffffff;
   --accent: #0b6bcb;
   --accent-fg: #ffffff;
@@ -52,6 +52,7 @@ a {
 }
 
 .page {
+  color: #ffffff;
   max-width: 720px;
   margin: 0 auto;
   padding: 24px 16px 48px;
@@ -69,6 +70,7 @@ h2 {
 }
 
 .lines {
+  color: var(--fg);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -101,7 +103,7 @@ h2 {
 .shipping label {
   display: grid;
   gap: 4px;
-  color: var(--muted);
+  color: inherit;
   font-size: 14px;
 }
 
@@ -133,7 +135,7 @@ h2 {
 .free-shipping {
   margin: 4px 0 0;
   font-size: 14px;
-  color: var(--muted);
+  color: inherit;
 }
 
 .free-shipping.badge {
@@ -185,6 +187,7 @@ h2 {
 }
 
 .recorder {
+  color: var(--fg);
   display: grid;
   gap: 16px;
   padding: 16px;
