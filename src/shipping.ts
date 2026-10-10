@@ -63,7 +63,7 @@ function rateCents(rate: Rate, weightKg: number): number {
 }
 
 /** Whether the text is a real YYYY-MM-DD calendar date, so 2026-02-30 is not. */
-function isCalendarDate(value: string): boolean {
+export function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
   }
