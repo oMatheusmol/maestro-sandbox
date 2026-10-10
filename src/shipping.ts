@@ -114,13 +114,13 @@ export function quoteShipping(request: ShippingRequest, now: Date = new Date()):
     return {
       method,
       cost: new Money(rateCents(RATES.express, weightKg)),
-      businessDays: RATES.express.businessDays,
+      businessDays: { ...RATES.express.businessDays },
     };
   }
   const waived = freeShipping(subtotal.cents / 100) || couponWaives;
   const baseCents = waived ? 0 : rateCents(RATES.standard, weightKg);
   if (method === "standard") {
-    return { method, cost: new Money(baseCents), businessDays: RATES.standard.businessDays };
+    return { method, cost: new Money(baseCents), businessDays: { ...RATES.standard.businessDays } };
   }
   return {
     method,

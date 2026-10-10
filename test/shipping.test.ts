@@ -90,6 +90,15 @@ describe("quoteShipping", () => {
     });
   });
 
+  it("returns its own business days, so a caller cannot change later quotes", () => {
+    const first = quoteShipping(request({ method: "standard" }), now);
+    first.businessDays!.min = 0;
+    const express = quoteShipping(request({ method: "express" }), now);
+    express.businessDays!.max = 0;
+    expect(quoteShipping(request({ method: "standard" }), now).businessDays).toEqual({ min: 7, max: 10 });
+    expect(quoteShipping(request({ method: "express" }), now).businessDays).toEqual({ min: 2, max: 3 });
+  });
+
   it("rounds a fractional weight's rate once to the cent", () => {
     const weightKg = 1.234;
     expect(quoteShipping(request({ method: "standard", weightKg }), now).cost.cents).toBe(1062);
