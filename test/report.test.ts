@@ -138,4 +138,28 @@ describe("reconcile", () => {
       /settlement.paidOut must be Money/,
     );
   });
+
+  it("accepts a settlement that matches the order total after its discount", () => {
+    const orders = [
+      {
+        id: "o1",
+        lines: [{ productCode: "A", unitPrice: money("100,00"), quantity: 1 }],
+        discount: money("10,00"),
+      },
+    ];
+    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("90,00") })).not.toThrow();
+  });
+
+  it("throws when the payout ignores the order's discount", () => {
+    const orders = [
+      {
+        id: "o1",
+        lines: [{ productCode: "A", unitPrice: money("100,00"), quantity: 1 }],
+        discount: money("10,00"),
+      },
+    ];
+    expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("100,00") })).toThrow(
+      /^reconciliation mismatch: expected R\$ 90,00, paid out R\$ 100,00$/,
+    );
+  });
 });

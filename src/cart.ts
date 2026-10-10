@@ -45,7 +45,12 @@ export function cartTotal(lines: CartLine[]): Money {
   );
 }
 
-/** Human-readable total shown at checkout. */
-export function checkoutSummary(lines: CartLine[]): string {
-  return `Total: ${cartTotal(lines).toBRL()}`;
+/** The amount to pay: the cart total less the discount. */
+export function payable(lines: CartLine[], discount: Money): Money {
+  return cartTotal(lines).subtract(discount);
+}
+
+/** Human-readable total shown at checkout, after the discount (none by default). */
+export function checkoutSummary(lines: CartLine[], discount: Money = new Money(0)): string {
+  return `Total: ${payable(lines, discount).toBRL()}`;
 }

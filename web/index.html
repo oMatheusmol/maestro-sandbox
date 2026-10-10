@@ -26,8 +26,15 @@
         <label>Street and number <input name="street" autocomplete="street-address" required /></label>
         <label>CEP <input name="cep" inputmode="numeric" autocomplete="postal-code" pattern="\d{5}-?\d{3}" required /></label>
       </form>
+      <form class="coupon" id="coupon" aria-labelledby="coupon-title">
+        <h2 id="coupon-title">Discount coupon</h2>
+        <label>Coupon code <input id="coupon-code" name="code" autocomplete="off" required /></label>
+        <button type="submit">Apply</button>
+        <p class="coupon-error" id="coupon-error" role="alert"></p>
+      </form>
       <div class="actions">
         <div class="summary">
+          <p class="discount" id="discount" hidden></p>
           <p class="total" id="total"></p>
           <p class="free-shipping" id="free-shipping"></p>
         </div>

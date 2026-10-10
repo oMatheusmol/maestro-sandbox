@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type CartLine, cartTotal, checkoutSummary, mergeLines } from "../src/cart.js";
+import { type CartLine, cartTotal, checkoutSummary, mergeLines, payable } from "../src/cart.js";
 import { Money } from "../src/money.js";
 
 describe("cart", () => {
@@ -183,5 +183,41 @@ describe("mergeLines", () => {
   it("throws when lines is not an array", () => {
     expect(() => mergeLines(null as unknown as CartLine[])).toThrow(TypeError);
     expect(() => mergeLines(null as unknown as CartLine[])).toThrow(/lines must be an array/);
+  });
+});
+
+describe("payable", () => {
+  const money = (value: string) => Money.fromBRL(value);
+  const lines = [
+    { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
+    { productCode: "B", unitPrice: money("5,50"), quantity: 1 },
+  ];
+
+  it("subtracts the discount from the cart total", () => {
+    expect(payable(lines, money("2,55")).toBRL()).toBe("R$ 22,95");
+  });
+
+  it("returns the full total when the discount is zero", () => {
+    expect(payable(lines, new Money(0)).cents).toBe(2550);
+  });
+
+  it("returns zero for an empty cart", () => {
+    expect(payable([], new Money(0)).cents).toBe(0);
+  });
+
+  it("throws when only a later line is invalid", () => {
+    expect(() =>
+      payable(
+        [
+          { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
+          { productCode: "B", unitPrice: money("5,50"), quantity: 0 },
+        ],
+        money("1,00"),
+      ),
+    ).toThrow(/quantity for product code B must be a positive integer/);
+  });
+
+  it("renders the checkout summary after the discount", () => {
+    expect(checkoutSummary(lines, money("2,55"))).toBe("Total: R$ 22,95");
   });
 });
