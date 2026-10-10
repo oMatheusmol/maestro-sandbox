@@ -33,7 +33,7 @@ async function expectReadableText(elements: Locator): Promise<void> {
   }
 }
 
-test("keeps text readable on blue pages and white cards", async ({ page, context }, testInfo) => {
+test("keeps text readable on dark green pages and white cards", async ({ page, context }, testInfo) => {
   await page.goto("/");
   await expectReadableText(page.locator("h1, h2, .shipping label, .total, .free-shipping, .lines li"));
   await page.getByRole("button", { name: /Place order and pay/ }).click();
@@ -61,20 +61,20 @@ test("keeps text readable on blue pages and white cards", async ({ page, context
   await photograph(page, testInfo, "recorder");
 });
 
-test("keeps the shared page background blue across navigation", async ({ page }, testInfo) => {
+test("keeps the shared page background dark green across navigation", async ({ page }, testInfo) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
-  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 255)");
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
   await photograph(page, testInfo, "checkout");
 
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
-  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 255)");
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
   await photograph(page, testInfo, "recorder");
 
   await page.getByRole("link", { name: "Checkout", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
-  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 255)");
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
 });
 
 for (const screen of SCREENS) {
