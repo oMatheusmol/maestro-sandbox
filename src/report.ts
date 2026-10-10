@@ -1,9 +1,11 @@
-import { cartTotal, type CartLine } from "./cart.js";
+import { type CartLine, payable } from "./cart.js";
 import { Money } from "./money.js";
 
 export interface Order {
   id: string;
   lines: CartLine[];
+  /** Coupon discount taken off the order's lines; none when absent. */
+  discount?: Money;
 }
 
 export interface Settlement {
@@ -46,7 +48,7 @@ export function reconcile(orders: Order[], settlement: Settlement): void {
   }
   const expected = orders
     .filter((o) => settlement.orderIds.includes(o.id))
-    .reduce((sum, o) => sum.add(cartTotal(o.lines)), new Money(0));
+    .reduce((sum, o) => sum.add(payable(o.lines, o.discount ?? new Money(0))), new Money(0));
   if (expected.cents !== settlement.paidOut.cents) {
     throw new Error(
       `reconciliation mismatch: expected ${expected.toBRL()}, paid out ${settlement.paidOut.toBRL()}`,
