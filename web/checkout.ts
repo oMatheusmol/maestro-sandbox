@@ -122,6 +122,15 @@ function render(now: Date = new Date()): void {
   pay.textContent = `Place order and pay ${amount.toBRL()}`;
 }
 
+/** Disables the delivery and coupon controls once the order is captured, so the total keeps matching the captured order. */
+function lockAfterCapture(): void {
+  document
+    .querySelectorAll<HTMLInputElement | HTMLButtonElement>('input[name="method"], #delivery-date, #coupon input, #coupon button')
+    .forEach((control) => {
+      control.disabled = true;
+    });
+}
+
 render();
 
 couponForm.addEventListener("submit", (event) => {
@@ -169,6 +178,7 @@ form.addEventListener("submit", (event) => {
   const delivery = { method, cost: quote.cost, deliveryDate: quote.deliveryDate };
   order = { id: crypto.randomUUID(), lines: cart, discount, shipping: delivery };
   pay.disabled = true;
+  lockAfterCapture();
   placed.textContent = "Order placed. You will get an email with the tracking code.";
   const date = delivery.deliveryDate ? ` for ${delivery.deliveryDate}` : "";
   deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[delivery.method]}${date}. Shipping: ${delivery.cost.toBRL()}. Total: ${orderTotal(order).toBRL()}.`;

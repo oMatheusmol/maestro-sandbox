@@ -139,8 +139,11 @@ test("captures a scheduled order with its date, fee and total, then locks paymen
   );
   await expect(pay(page)).toBeDisabled();
 
-  // A second submission after capture is ignored: the captured details keep the first date.
-  await page.getByLabel("Delivery date").fill("2026-10-21");
+  // Once captured, the delivery and coupon controls are disabled, and a second submission is ignored.
+  await expect(page.getByLabel("Delivery date")).toBeDisabled();
+  await expect(option(page, "Express").getByRole("radio")).toBeDisabled();
+  await expect(page.getByLabel("Coupon code")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Apply", exact: true })).toBeDisabled();
   await page.evaluate(() => document.querySelector<HTMLFormElement>("#shipping")!.requestSubmit());
   await expect(page.locator("#delivery-details")).toHaveText(
     "Delivery: Scheduled for 2026-10-20. Shipping: R$ 5,00. Total: R$ 1.133,70.",
@@ -155,6 +158,22 @@ test("captures an express order with its charge", async ({ page }) => {
 
   await expect(page.locator("#delivery-details")).toHaveText("Delivery: Express. Shipping: R$ 27,00. Total: R$ 1.155,70.");
   await expect(pay(page)).toBeDisabled();
+});
+
+test("keeps the captured total when the method is changed after capture", async ({ page }) => {
+  await option(page, "Express").click();
+  await fillShipping(page);
+  await pay(page).click();
+  await expect(page.locator("#delivery-details")).toHaveText("Delivery: Express. Shipping: R$ 27,00. Total: R$ 1.155,70.");
+
+  // The method is locked, so the click on the disabled option does not change the selection.
+  await option(page, "Standard").click({ force: true });
+  await expect(option(page, "Express").getByRole("radio")).toBeChecked();
+  await expect(option(page, "Standard").getByRole("radio")).not.toBeChecked();
+  await expect(page.locator("#total")).toHaveText("Total: R$ 1.155,70");
+  await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
+  await expect(pay(page)).toHaveText("Place order and pay R$ 1.155,70");
+  await expect(page.locator("#delivery-details")).toHaveText("Delivery: Express. Shipping: R$ 27,00. Total: R$ 1.155,70.");
 });
 
 test("keeps the current quote when a coupon is unknown or expired", async ({ page }) => {
