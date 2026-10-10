@@ -36,6 +36,32 @@ test("refuses an unknown coupon code", async ({ page }) => {
   await expect(page.locator("#total")).toHaveText("Total: R$ 1.128,70");
 });
 
+test("takes a percentage coupon off the merchandise before express shipping is added", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Coupon code").fill("WELCOME10");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(page.locator("#total")).toHaveText("Total: R$ 1.015,83");
+
+  await page.locator(".delivery .option", { hasText: "Express" }).click();
+  await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
+  await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
+  await expect(page.locator("#total")).toHaveText("Total: R$ 1.042,83");
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.042,83");
+});
+
+test("takes a fixed coupon off the merchandise with express shipping already chosen", async ({ page }) => {
+  await page.goto("/");
+  await page.locator(".delivery .option", { hasText: "Express" }).click();
+  await expect(page.locator("#total")).toHaveText("Total: R$ 1.155,70");
+
+  await page.getByLabel("Coupon code").fill("save50");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(page.locator("#discount")).toHaveText("Coupon SAVE50: -R$ 50,00");
+  await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
+  await expect(page.locator("#total")).toHaveText("Total: R$ 1.105,70");
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.105,70");
+});
+
 test("shows the coupon field and Apply button above the pay button", async ({ page, viewport }) => {
   await page.goto("/");
 

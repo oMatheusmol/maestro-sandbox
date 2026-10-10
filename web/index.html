@@ -25,6 +25,29 @@
         <label>Full name <input name="name" autocomplete="name" required /></label>
         <label>Street and number <input name="street" autocomplete="street-address" required /></label>
         <label>CEP <input name="cep" inputmode="numeric" autocomplete="postal-code" pattern="\d{5}-?\d{3}" required /></label>
+        <fieldset class="delivery">
+          <legend>Delivery</legend>
+          <label class="option">
+            <input type="radio" name="method" value="standard" checked />
+            <span class="option-name">Standard</span>
+            <span class="option-window" id="standard-window"></span>
+            <span class="price" id="standard-price"></span>
+          </label>
+          <label class="option">
+            <input type="radio" name="method" value="express" />
+            <span class="option-name">Express</span>
+            <span class="option-window" id="express-window"></span>
+            <span class="price" id="express-price"></span>
+          </label>
+          <label class="option">
+            <input type="radio" name="method" value="scheduled" />
+            <span class="option-name">Scheduled</span>
+            <span class="option-window" id="scheduled-window"></span>
+            <span class="price" id="scheduled-price"></span>
+          </label>
+        </fieldset>
+        <label>Delivery date <input id="delivery-date" name="deliveryDate" type="date" aria-describedby="date-error" disabled /></label>
+        <p class="field-error" id="date-error" aria-live="polite"></p>
       </form>
       <form class="coupon" id="coupon" aria-labelledby="coupon-title">
         <h2 id="coupon-title">Discount coupon</h2>
@@ -41,6 +64,7 @@
         <button class="pay" id="pay" type="submit" form="shipping"></button>
       </div>
       <p class="placed" id="placed" role="status"></p>
+      <p class="captured" id="delivery-details" hidden></p>
     </main>
     <script type="module" src="./checkout.ts"></script>
   </body>
