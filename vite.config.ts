@@ -7,6 +7,13 @@ function notesApi(): Plugin {
   return {
     name: "notes-api",
     configureServer(server) {
+      server.middlewares.use("/api/health", (req, res) => {
+        if (req.method !== "GET") {
+          res.writeHead(405, { allow: "GET" }).end();
+          return;
+        }
+        res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ ok: true }));
+      });
       server.middlewares.use("/api/notes", (req, res) => {
         if (req.method !== "POST") {
           res.writeHead(405, { allow: "POST" }).end();
