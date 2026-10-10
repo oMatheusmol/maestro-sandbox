@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { type CartLine, cartTotal, checkoutSummary, mergeLines, payable } from "../src/cart.js";
+import {
+  type CartLine,
+  cartTotal,
+  cartWeight,
+  checkoutSummary,
+  mergeLines,
+  payable,
+  type WeightedCartLine,
+} from "../src/cart.js";
 import { Money } from "../src/money.js";
 
 describe("cart", () => {
@@ -183,6 +191,87 @@ describe("mergeLines", () => {
   it("throws when lines is not an array", () => {
     expect(() => mergeLines(null as unknown as CartLine[])).toThrow(TypeError);
     expect(() => mergeLines(null as unknown as CartLine[])).toThrow(/lines must be an array/);
+  });
+});
+
+describe("cartWeight", () => {
+  const money = (value: string) => Money.fromBRL(value);
+  const weighed = (
+    productCode: string,
+    quantity: number,
+    unitWeightKg: number,
+  ): WeightedCartLine => ({ productCode, unitPrice: money("10,00"), quantity, unitWeightKg });
+
+  it("multiplies each line's quantity by its unit weight", () => {
+    expect(cartWeight([weighed("A", 2, 1.5), weighed("B", 3, 0.25)])).toBeCloseTo(3.75);
+  });
+
+  it("counts repeated lines of one code independently", () => {
+    expect(cartWeight([weighed("A", 1, 1), weighed("A", 2, 0.5)])).toBe(2);
+    expect(cartWeight([weighed("A", 1, 1), weighed("A", 1, 2)])).toBe(3);
+  });
+
+  it("sums fractional weights", () => {
+    expect(cartWeight([weighed("A", 3, 0.333)])).toBeCloseTo(0.999);
+  });
+
+  it("returns zero for a zero weight", () => {
+    expect(cartWeight([weighed("A", 2, 0)])).toBe(0);
+  });
+
+  it("returns zero for an empty cart", () => {
+    expect(cartWeight([])).toBe(0);
+  });
+
+  it("throws when lines is not an array", () => {
+    expect(() => cartWeight(null as unknown as WeightedCartLine[])).toThrow(TypeError);
+    expect(() => cartWeight(null as unknown as WeightedCartLine[])).toThrow(/lines must be an array/);
+  });
+
+  it.each<[string, number]>([
+    ["negative", -1],
+    ["NaN", NaN],
+    ["infinite", Infinity],
+  ])("throws on a %s unit weight", (_label, unitWeightKg) => {
+    const line = weighed("A", 1, unitWeightKg);
+    expect(() => cartWeight([line])).toThrow(RangeError);
+    expect(() => cartWeight([line])).toThrow(
+      /unit weight for product code A must be a finite, non-negative number of kilograms/,
+    );
+  });
+
+  it("throws on a missing unit weight", () => {
+    const line = { productCode: "A", unitPrice: money("10,00"), quantity: 1 } as unknown as WeightedCartLine;
+    expect(() => cartWeight([line])).toThrow(/unit weight for product code A must be a finite/);
+  });
+
+  it.each<[string, number]>([
+    ["zero", 0],
+    ["negative", -2],
+    ["fractional", 2.5],
+  ])("throws on a %s quantity", (_label, quantity) => {
+    expect(() => cartWeight([weighed("A", quantity, 1)])).toThrow(RangeError);
+    expect(() => cartWeight([weighed("A", quantity, 1)])).toThrow(
+      /quantity for product code A must be a positive integer/,
+    );
+  });
+
+  it("names the invalid later line when a valid first line is followed by an invalid SKU", () => {
+    expect(() => cartWeight([weighed("A", 2, 1), weighed("B", 1, -1)])).toThrow(
+      /unit weight for product code B/,
+    );
+    expect(() => cartWeight([weighed("A", 2, 1), weighed("B", 0, 1)])).toThrow(
+      /quantity for product code B must be a positive integer/,
+    );
+  });
+
+  it("names the invalid later line when a repeated SKU is invalid", () => {
+    expect(() => cartWeight([weighed("A", 2, 1), weighed("A", 1, NaN)])).toThrow(
+      /unit weight for product code A/,
+    );
+    expect(() => cartWeight([weighed("A", 2, 1), weighed("A", 0, 1)])).toThrow(
+      /quantity for product code A must be a positive integer/,
+    );
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Coupon, discountFor } from "../src/coupon.js";
+import { type Coupon, discountFor, isFreeShippingEligible } from "../src/coupon.js";
 import { Money } from "../src/money.js";
 
 describe("discountFor", () => {
@@ -79,6 +79,49 @@ describe("discountFor", () => {
     expect(() => discountFor(fixed("-R$ 5,00"), total, now)).toThrow(RangeError);
     expect(() => discountFor(fixed("-R$ 5,00"), total, now)).toThrow(
       /fixed amount must be greater than zero: R\$ -5,00/,
+    );
+  });
+});
+
+describe("free-shipping coupon", () => {
+  const money = (value: string) => Money.fromBRL(value);
+  const expiresAt = new Date("2030-06-30T23:59:59.999Z");
+  const now = new Date("2026-10-10T12:00:00Z");
+  const freeShipping: Coupon = { code: "FREESHIP", kind: "free-shipping", expiresAt };
+  const percent: Coupon = { code: "P10", kind: "percent", percent: 10, expiresAt };
+  const fixed: Coupon = { code: "F5", kind: "fixed", amount: money("5,00"), expiresAt };
+  const total = money("25,50");
+
+  it("is eligible for shipping before its expiry", () => {
+    expect(isFreeShippingEligible(freeShipping, now)).toBe(true);
+  });
+
+  it("is eligible for shipping exactly at its expiry instant", () => {
+    expect(isFreeShippingEligible(freeShipping, expiresAt)).toBe(true);
+  });
+
+  it("is refused one millisecond after its expiry", () => {
+    const afterExpiry = new Date(expiresAt.getTime() + 1);
+    expect(() => isFreeShippingEligible(freeShipping, afterExpiry)).toThrow(Error);
+    expect(() => isFreeShippingEligible(freeShipping, afterExpiry)).toThrow(
+      /^coupon FREESHIP expired on 2030-06-30T23:59:59.999Z$/,
+    );
+  });
+
+  it("is not eligible for shipping when it is a percentage or fixed coupon", () => {
+    expect(isFreeShippingEligible(percent, now)).toBe(false);
+    expect(isFreeShippingEligible(fixed, now)).toBe(false);
+  });
+
+  it("gives no merchandise discount", () => {
+    expect(discountFor(freeShipping, total, now).cents).toBe(0);
+    expect(discountFor(freeShipping, total, expiresAt).cents).toBe(0);
+  });
+
+  it("refuses a merchandise discount one millisecond after its expiry", () => {
+    const afterExpiry = new Date(expiresAt.getTime() + 1);
+    expect(() => discountFor(freeShipping, total, afterExpiry)).toThrow(
+      /^coupon FREESHIP expired on 2030-06-30T23:59:59.999Z$/,
     );
   });
 });

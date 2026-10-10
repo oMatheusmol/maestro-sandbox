@@ -6,6 +6,18 @@ export interface CartLine {
   quantity: number;
 }
 
+export interface WeightedCartLine extends CartLine {
+  /** Weight of one unit, in kilograms. */
+  unitWeightKg: number;
+}
+
+/** Throws a RangeError when the line's quantity is not a positive integer. */
+function assertQuantity(line: CartLine): void {
+  if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
+    throw new RangeError(`quantity for product code ${line.productCode} must be a positive integer`);
+  }
+}
+
 /**
  * Merges lines with the same product code, adding their quantities, in the
  * order each code first appears. Throws a RangeError when a quantity is not a
@@ -17,9 +29,7 @@ export function mergeLines(lines: CartLine[]): CartLine[] {
   }
   const merged = new Map<string, CartLine>();
   for (const line of lines) {
-    if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
-      throw new RangeError(`quantity for product code ${line.productCode} must be a positive integer`);
-    }
+    assertQuantity(line);
     const first = merged.get(line.productCode);
     if (!first) {
       merged.set(line.productCode, { ...line });
@@ -43,6 +53,27 @@ export function cartTotal(lines: CartLine[]): Money {
     (sum, line) => sum.add(line.unitPrice.multiplyBy(line.quantity)),
     new Money(0),
   );
+}
+
+/**
+ * The cart weight in kilograms: each line's quantity times its unit weight.
+ * Every line is validated before summing, and repeated product codes are counted
+ * line by line. Throws a RangeError when a quantity is not a positive integer or
+ * a unit weight is not a finite, non-negative number.
+ */
+export function cartWeight(lines: WeightedCartLine[]): number {
+  if (!Array.isArray(lines)) {
+    throw new TypeError(`lines must be an array: ${typeof lines}`);
+  }
+  for (const line of lines) {
+    assertQuantity(line);
+    if (!Number.isFinite(line.unitWeightKg) || line.unitWeightKg < 0) {
+      throw new RangeError(
+        `unit weight for product code ${line.productCode} must be a finite, non-negative number of kilograms: ${line.unitWeightKg}`,
+      );
+    }
+  }
+  return lines.reduce((sum, line) => sum + line.quantity * line.unitWeightKg, 0);
 }
 
 /** The amount to pay: the cart total less the discount. */
