@@ -15,7 +15,7 @@ test("refuses POST /api/health with 405 and allows only GET", async ({ request }
   expect(response.headers()["allow"]).toBe("GET");
 });
 
-test("stores a voice note posted to /api/notes and answers its size", async ({ request }) => {
+test("answers the byte count of a voice note posted to /api/notes", async ({ request }) => {
   const note = "made-up voice note";
   const response = await request.post("/api/notes", { data: note, headers: { "content-type": "text/plain" } });
 
