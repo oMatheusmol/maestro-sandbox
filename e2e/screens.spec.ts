@@ -58,9 +58,15 @@ async function expectReadableText(elements: Locator): Promise<void> {
   }
 }
 
-test("keeps text readable on dark green pages and white cards", async ({ page, context }, testInfo) => {
+test("keeps text readable on purple pages and white cards", async ({ page, context }, testInfo) => {
   await page.goto("/");
   await expectReadableText(page.locator("h1, h2, .shipping label, .total, .free-shipping, .lines li"));
+  await page.locator(".delivery .option", { hasText: "Scheduled" }).click();
+  await page.getByRole("button", { name: /Place order and pay/ }).click();
+  await expect(page.locator("#date-error")).toHaveText("Choose a delivery date.");
+  await expectReadableText(page.locator("#date-error"));
+  await page.locator(".delivery .option", { hasText: "Standard" }).click();
+  await expect(page.locator("#date-error")).toBeEmpty();
   await page.getByRole("button", { name: /Place order and pay/ }).click();
   await expect(page.getByLabel("Full name").and(page.locator(":invalid"))).toBeVisible();
   await expect(page.locator("#placed")).toBeEmpty();
@@ -68,38 +74,55 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
   await page.getByLabel("Street and number").fill("Example Street 123");
   await page.getByLabel("CEP", { exact: true }).fill("12345-678");
   await expectReadableText(page.locator(".shipping input"));
+  await page.getByLabel("Coupon code").fill("NOPE");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText("Unknown coupon code: NOPE");
+  await expectReadableText(page.getByRole("alert"));
   await page.getByRole("button", { name: /Place order and pay/ }).click();
   await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
   await expectReadableText(page.getByRole("status"));
+  await expectReadableText(page.locator("#delivery-details"));
   await photograph(page, testInfo, "checkout");
 
   await context.grantPermissions(["microphone"]);
-  await page.route("/api/notes", (route) => route.fulfill({ status: 503 }));
+  let releaseResponse!: () => void;
+  const held = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
+  await page.route("/api/notes", async (route) => {
+    await held;
+    await route.fulfill({ status: 503 });
+  });
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expectReadableText(page.locator("h1, .page > p, .status"));
   await page.getByRole("button", { name: "Record", exact: true }).click();
   await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(page.getByRole("status")).toHaveText("Recording…");
+  await expectReadableText(page.locator(".status"));
   await page.waitForTimeout(500);
   await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Sending…");
+  await expectReadableText(page.locator(".status"));
+  releaseResponse();
   await expect(page.getByRole("status")).toHaveText("Not sent (503). Try again.");
   await expectReadableText(page.locator(".status, .notes li"));
   await photograph(page, testInfo, "recorder");
 });
 
-test("keeps the shared page background dark green across navigation", async ({ page }, testInfo) => {
+test("keeps the shared page background purple across navigation", async ({ page }, testInfo) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
-  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(88, 28, 135)");
   await photograph(page, testInfo, "checkout");
 
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
-  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(88, 28, 135)");
   await photograph(page, testInfo, "recorder");
 
   await page.getByRole("link", { name: "Checkout", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
-  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
+  await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(88, 28, 135)");
 });
 
 for (const screen of SCREENS) {
