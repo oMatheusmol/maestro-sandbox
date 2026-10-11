@@ -42,6 +42,7 @@ a {
 .top nav {
   display: flex;
   gap: 16px;
+  font-family: Arial, sans-serif;
 }
 
 .top nav a[aria-current="page"] {

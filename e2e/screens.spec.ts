@@ -7,6 +7,31 @@ const SCREENS = [
   { name: "recorder", path: "/recorder.html", heading: "Voice note" },
 ];
 
+test("menu uses Arial when navigating between screens", async ({ page }, testInfo) => {
+  await page.goto("/");
+
+  const menu = page.getByRole("navigation");
+  const checkout = menu.getByRole("link", { name: "Checkout", exact: true });
+  const voiceNote = menu.getByRole("link", { name: "Voice note", exact: true });
+
+  await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
+  await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
+  await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
+  await photograph(page, testInfo, "checkout");
+
+  await voiceNote.click();
+  await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
+  await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
+  await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
+  await photograph(page, testInfo, "recorder");
+
+  await checkout.click();
+  await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
+  await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
+  await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
+  await photograph(page, testInfo, "checkout");
+});
+
 async function expectReadableText(elements: Locator): Promise<void> {
   const contrasts = await elements.evaluateAll((nodes) => {
     const rgb = (color: string) => color.match(/[\d.]+/g)!.map(Number);
