@@ -68,6 +68,19 @@ export function cartQuantity(lines: CartLine[]): number {
   return count;
 }
 
+/** Counts the distinct product codes in the cart, without reading prices. */
+export function cartProductCount(lines: CartLine[]): number {
+  if (!Array.isArray(lines)) {
+    throw new TypeError(`lines must be an array: ${typeof lines}`);
+  }
+  const codes = new Set<string>();
+  for (const line of lines) {
+    assertQuantity(line);
+    codes.add(line.productCode);
+  }
+  return codes.size;
+}
+
 /**
  * The cart weight in kilograms: each line's quantity times its unit weight.
  * Every line is validated before summing, and repeated product codes are counted

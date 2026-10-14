@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type CartLine,
+  cartProductCount,
   cartQuantity,
   cartTotal,
   cartWeight,
@@ -322,6 +323,59 @@ describe("cartQuantity", () => {
   it("throws when only a later line is invalid", () => {
     expect(() =>
       cartQuantity([
+        { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
+        { productCode: "B", unitPrice: money("5,50"), quantity: 0 },
+      ]),
+    ).toThrow(/quantity for product code B must be a positive integer/);
+  });
+});
+
+describe("cartProductCount", () => {
+  const money = (value: string) => Money.fromBRL(value);
+
+  it("counts a repeated product code once", () => {
+    expect(
+      cartProductCount([
+        { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
+        { productCode: "B", unitPrice: money("5,50"), quantity: 1 },
+        { productCode: "A", unitPrice: money("10,00"), quantity: 3 },
+      ]),
+    ).toBe(2);
+  });
+
+  it("counts one code once even when its lines have different unit prices", () => {
+    expect(
+      cartProductCount([
+        { productCode: "KB-87", unitPrice: money("899,90"), quantity: 1 },
+        { productCode: "KB-87", unitPrice: money("849,90"), quantity: 2 },
+      ]),
+    ).toBe(1);
+  });
+
+  it("returns zero for an empty cart", () => {
+    expect(cartProductCount([])).toBe(0);
+  });
+
+  it("throws when lines is not an array", () => {
+    expect(() => cartProductCount(null as unknown as CartLine[])).toThrow(TypeError);
+    expect(() => cartProductCount(null as unknown as CartLine[])).toThrow(/lines must be an array/);
+  });
+
+  it.each<[string, number]>([
+    ["zero", 0],
+    ["negative", -2],
+    ["fractional", 2.5],
+  ])("throws on a %s quantity", (_label, quantity) => {
+    const line = { productCode: "A", unitPrice: money("10,00"), quantity };
+    expect(() => cartProductCount([line])).toThrow(RangeError);
+    expect(() => cartProductCount([line])).toThrow(
+      /quantity for product code A must be a positive integer/,
+    );
+  });
+
+  it("throws when only a later line is invalid", () => {
+    expect(() =>
+      cartProductCount([
         { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
         { productCode: "B", unitPrice: money("5,50"), quantity: 0 },
       ]),
