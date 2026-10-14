@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type CartLine,
+  cartQuantity,
   cartTotal,
   cartWeight,
   checkoutSummary,
@@ -308,5 +309,58 @@ describe("payable", () => {
 
   it("renders the checkout summary after the discount", () => {
     expect(checkoutSummary(lines, money("2,55"))).toBe("Total: R$ 22,95");
+  });
+});
+
+describe("cartQuantity", () => {
+  const money = (value: string) => Money.fromBRL(value);
+
+  it("sums the quantities of all lines, including repeated codes", () => {
+    expect(
+      cartQuantity([
+        { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
+        { productCode: "B", unitPrice: money("5,50"), quantity: 3 },
+        { productCode: "A", unitPrice: money("10,00"), quantity: 1 },
+      ]),
+    ).toBe(6);
+  });
+
+  it("does not read unitPrice, so one code with two prices is counted", () => {
+    expect(
+      cartQuantity([
+        { productCode: "KB-87", unitPrice: money("899,90"), quantity: 2 },
+        { productCode: "KB-87", unitPrice: money("849,90"), quantity: 1 },
+      ]),
+    ).toBe(3);
+  });
+
+  it("returns zero for an empty cart", () => {
+    expect(cartQuantity([])).toBe(0);
+  });
+
+  it.each<[string, number]>([
+    ["zero", 0],
+    ["negative", -2],
+    ["fractional", 2.5],
+  ])("throws on a %s quantity", (_label, quantity) => {
+    const line = { productCode: "A", unitPrice: money("10,00"), quantity };
+    expect(() => cartQuantity([line])).toThrow(RangeError);
+    expect(() => cartQuantity([line])).toThrow(
+      /quantity for product code A must be a positive integer/,
+    );
+  });
+
+  it("throws when only a later line is invalid", () => {
+    expect(() =>
+      cartQuantity([
+        { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
+        { productCode: "B", unitPrice: money("5,50"), quantity: 0 },
+      ]),
+    ).toThrow(/quantity for product code B must be a positive integer/);
+  });
+
+  it("throws when lines is not an array", () => {
+    expect(() => cartQuantity(null as unknown as CartLine[])).toThrow(TypeError);
+    expect(() => cartQuantity(null as unknown as CartLine[])).toThrow(/lines must be an array/);
   });
 });
