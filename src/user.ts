@@ -23,3 +23,14 @@ export function displayName(user: User): string {
   const nickname = user.profile?.nickname?.trim();
   return nickname && nickname.length > 0 ? nickname : user.name;
 }
+
+/** URL-safe handle built from the displayed name: lowercase, accents removed, words joined by hyphens. */
+export function userHandle(user: User): string {
+  return displayName(user)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}

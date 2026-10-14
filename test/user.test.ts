@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName } from "../src/user.js";
+import { displayName, userHandle } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -65,6 +65,47 @@ describe("displayName", () => {
   it("throws when user.name is not a non-empty string", () => {
     expect(() => displayName({ id: "1", name: "" })).toThrow(TypeError);
     expect(() => displayName({ id: "1", name: "" })).toThrow(
+      /user.name must be a non-empty string/,
+    );
+  });
+});
+
+describe("userHandle", () => {
+  it("builds a lowercase handle from the trimmed displayed name", () => {
+    expect(userHandle({ id: "1", name: " Ana Souza " })).toBe("ana-souza");
+  });
+
+  it("replaces each run of whitespace with a single hyphen", () => {
+    expect(userHandle({ id: "1", name: "Ana \t  Souza" })).toBe("ana-souza");
+  });
+
+  it("drops characters other than a-z, 0-9 and hyphen", () => {
+    expect(userHandle({ id: "1", name: "Ana O'Neil #2" })).toBe("ana-oneil-2");
+  });
+
+  it("removes accents via NFD", () => {
+    expect(userHandle({ id: "1", name: "José Ção" })).toBe("jose-cao");
+  });
+
+  it("builds the handle from the nickname when one is set", () => {
+    expect(userHandle({ id: "1", name: "Ana Souza", profile: { nickname: " Ana " } })).toBe("ana");
+  });
+
+  it("throws when user is not an object", () => {
+    expect(() => userHandle(null as any)).toThrow(TypeError);
+    expect(() => userHandle(null as any)).toThrow(/user must be an object/);
+  });
+
+  it("throws when user.id is not a non-empty string", () => {
+    expect(() => userHandle({ id: "", name: "Ana Souza" })).toThrow(TypeError);
+    expect(() => userHandle({ id: "", name: "Ana Souza" })).toThrow(
+      /user.id must be a non-empty string/,
+    );
+  });
+
+  it("throws when user.name is not a non-empty string", () => {
+    expect(() => userHandle({ id: "1", name: "" })).toThrow(TypeError);
+    expect(() => userHandle({ id: "1", name: "" })).toThrow(
       /user.name must be a non-empty string/,
     );
   });
