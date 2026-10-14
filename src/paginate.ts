@@ -27,3 +27,22 @@ export function getPage<T>(items: T[], page: number, size: number): T[] {
   const start = (page - 1) * size;
   return items.slice(start, start + size);
 }
+
+/** 1-based positions of the first and last item shown on a page; 0 and 0 when empty. */
+export function pageRange(
+  total: number,
+  page: number,
+  size: number,
+): { first: number; last: number } {
+  const pages = pageCount(total, size);
+  if (!Number.isInteger(page) || page <= 0) {
+    throw new RangeError(`page must be a positive integer: ${page}`);
+  }
+  if (page > pages) {
+    throw new RangeError(`page ${page} out of range (1..${pages})`);
+  }
+  if (total === 0) {
+    return { first: 0, last: 0 };
+  }
+  return { first: (page - 1) * size + 1, last: Math.min(page * size, total) };
+}
