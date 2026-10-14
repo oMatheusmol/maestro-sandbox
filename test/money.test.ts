@@ -300,4 +300,57 @@ describe("Money", () => {
     const m = Money.fromBRL("-R$ 12,50");
     expect(m.cents).toBe(-1250);
   });
+
+  it("allocates a positive amount evenly when divisible", () => {
+    const shares = new Money(10).allocate(2);
+    expect(shares.map((s) => s.cents)).toEqual([5, 5]);
+  });
+
+  it("distributes the remainder one cent at a time to the earliest recipients", () => {
+    const shares = new Money(10).allocate(3);
+    expect(shares.map((s) => s.cents)).toEqual([4, 3, 3]);
+  });
+
+  it("allocates a negative amount consistently, earliest recipients get the larger magnitude", () => {
+    const shares = new Money(-5).allocate(2);
+    expect(shares.map((s) => s.cents)).toEqual([-3, -2]);
+  });
+
+  it("allocates zero into zero shares", () => {
+    const shares = new Money(0).allocate(3);
+    expect(shares.map((s) => s.cents)).toEqual([0, 0, 0]);
+    for (const share of shares) {
+      expect(Object.is(share.cents, 0)).toBe(true);
+    }
+  });
+
+  it("gives trailing zero shares when there are more parts than cents", () => {
+    const shares = new Money(1).allocate(3);
+    expect(shares.map((s) => s.cents)).toEqual([1, 0, 0]);
+  });
+
+  it("throws when allocating into invalid parts", () => {
+    const m = new Money(1250);
+    for (const parts of [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => m.allocate(parts)).toThrow("parts must be a positive safe integer");
+    }
+  });
+
+  it("conserves the sum of cents across shares", () => {
+    for (const cents of [1250, -5, 1, -1, 0, 999999, -777]) {
+      for (const parts of [1, 2, 3, 7]) {
+        const shares = new Money(cents).allocate(parts);
+        expect(shares).toHaveLength(parts);
+        const sum = shares.reduce((acc, s) => acc + s.cents, 0);
+        expect(sum).toBe(cents);
+      }
+    }
+  });
+
+  it("leaves the original Money unchanged and returns new instances", () => {
+    const m = new Money(1250);
+    const shares = m.allocate(2);
+    expect(m.cents).toBe(1250);
+    expect(shares.every((s) => s !== m)).toBe(true);
+  });
 });

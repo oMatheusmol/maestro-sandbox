@@ -34,9 +34,11 @@ Money.fromBRL("-R$ 12,50").toBRL(); // "R$ -12,50"
 The constructor rejects fractional cents. `fromBRL` rounds parsed amounts to
 the nearest cent and throws for invalid amounts such as `"invalid"`.
 
-`add`, `subtract`, and `multiplyBy` return new `Money` instances, leaving their
-operands unchanged. Multiplication rounds the result to integer cents and
-requires a finite quantity.
+`add`, `subtract`, `multiplyBy`, and `allocate` return new `Money` instances,
+leaving their operands unchanged. Multiplication rounds the result to integer
+cents and requires a finite quantity. `allocate(parts)` splits the cents into
+`parts` shares whose cents sum to the original; the earliest shares receive the
+remainder, and `parts` must be a positive safe integer.
 
 ```ts
 const fee = new Money(250);
@@ -47,6 +49,7 @@ total === price; // false
 price.subtract(fee).toBRL(); // "R$ 10,00"
 price.multiplyBy(3).toBRL(); // "R$ 37,50"
 new Money(101).multiplyBy(0.5).cents; // 51
+new Money(10).allocate(3).map((s) => s.cents); // [4, 3, 3]
 
 price.cents; // 1250 (unchanged)
 fee.cents; // 250 (unchanged)

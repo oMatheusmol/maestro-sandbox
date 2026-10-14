@@ -88,4 +88,19 @@ export class Money {
     }
     return new Money(Math.round(this.cents * quantity));
   }
+
+  allocate(parts: number): Money[] {
+    if (!Number.isSafeInteger(parts) || parts <= 0) {
+      throw new Error(`parts must be a positive safe integer: ${parts}`);
+    }
+    const magnitude = Math.abs(this.cents);
+    const base = Math.floor(magnitude / parts);
+    const remainder = magnitude % parts;
+    const shares: Money[] = [];
+    for (let i = 0; i < parts; i++) {
+      const share = base + (i < remainder ? 1 : 0);
+      shares.push(new Money(this.cents < 0 ? 0 - share : share));
+    }
+    return shares;
+  }
 }
