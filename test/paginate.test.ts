@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPage, pageCount } from "../src/paginate.js";
+import { getPage, pageCount, pageOffset } from "../src/paginate.js";
 
 describe("paginate", () => {
   const items = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -75,6 +75,33 @@ describe("paginate", () => {
     it("throws when size is not a positive integer in pageCount", () => {
       expect(() => pageCount(10, 0)).toThrow(RangeError);
       expect(() => pageCount(10, 0)).toThrow(/size must be a positive integer/);
+    });
+  });
+
+  describe("pageOffset", () => {
+    it("returns 0 for the first page", () => {
+      expect(pageOffset(1, 10)).toBe(0);
+    });
+
+    it("returns the index of the first item on a later page", () => {
+      expect(pageOffset(3, 5)).toBe(10);
+    });
+
+    it("returns 0 for the first page at size 1", () => {
+      expect(pageOffset(1, 1)).toBe(0);
+    });
+
+    it("throws when page is not a positive integer", () => {
+      expect(() => pageOffset(0, 5)).toThrow(RangeError);
+      expect(() => pageOffset(0, 5)).toThrow(/page must be a positive integer/);
+      expect(() => pageOffset(-1, 5)).toThrow(/page must be a positive integer/);
+      expect(() => pageOffset(1.5, 5)).toThrow(/page must be a positive integer/);
+    });
+
+    it("throws when size is not a positive integer", () => {
+      expect(() => pageOffset(1, 0)).toThrow(RangeError);
+      expect(() => pageOffset(1, 0)).toThrow(/size must be a positive integer/);
+      expect(() => pageOffset(1, 2.5)).toThrow(/size must be a positive integer/);
     });
   });
 });

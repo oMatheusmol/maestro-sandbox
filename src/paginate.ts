@@ -27,3 +27,14 @@ export function getPage<T>(items: T[], page: number, size: number): T[] {
   const start = (page - 1) * size;
   return items.slice(start, start + size);
 }
+
+/** Returns the 0-based index of the first item on a 1-based page. */
+export function pageOffset(page: number, size: number): number {
+  if (!Number.isInteger(page) || page <= 0) {
+    throw new RangeError(`page must be a positive integer: ${page}`);
+  }
+  if (!Number.isInteger(size) || size <= 0) {
+    throw new RangeError(`size must be a positive integer: ${size}`);
+  }
+  return (page - 1) * size;
+}
