@@ -1,3 +1,3 @@
 # Changelog
 
-- pageOffset (#PR_NUMBER)
+- pageOffset (#150)
