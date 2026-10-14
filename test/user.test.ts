@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName } from "../src/user.js";
+import { displayName, isGuest } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -65,6 +65,51 @@ describe("displayName", () => {
   it("throws when user.name is not a non-empty string", () => {
     expect(() => displayName({ id: "1", name: "" })).toThrow(TypeError);
     expect(() => displayName({ id: "1", name: "" })).toThrow(
+      /user.name must be a non-empty string/,
+    );
+  });
+});
+
+describe("isGuest", () => {
+  it("is false for a named user without a profile", () => {
+    expect(isGuest({ id: "42", name: "Bruno Lima" })).toBe(false);
+  });
+
+  it("is false for a user with a nickname", () => {
+    expect(isGuest({ id: "1", name: "Ana Souza", profile: { nickname: "ana" } })).toBe(false);
+  });
+
+  it("is false for a named user whose nickname is only whitespace", () => {
+    expect(isGuest({ id: "1", name: "Ana Souza", profile: { nickname: " \t\n " } })).toBe(false);
+  });
+
+  it("is true when name and nickname are both whitespace-only", () => {
+    expect(isGuest({ id: "1", name: " ", profile: { nickname: "\t\n" } })).toBe(true);
+  });
+
+  it("is true when name is whitespace-only and there is no profile", () => {
+    expect(isGuest({ id: "1", name: "   " })).toBe(true);
+  });
+
+  it("is false when name is whitespace-only but a nickname is set", () => {
+    expect(isGuest({ id: "1", name: "  ", profile: { nickname: "ana" } })).toBe(false);
+  });
+
+  it("throws when user is not an object", () => {
+    expect(() => isGuest(null as any)).toThrow(TypeError);
+    expect(() => isGuest(null as any)).toThrow(/user must be an object/);
+  });
+
+  it("throws when user.id is not a non-empty string", () => {
+    expect(() => isGuest({ id: "", name: "Ana Souza" })).toThrow(TypeError);
+    expect(() => isGuest({ id: "", name: "Ana Souza" })).toThrow(
+      /user.id must be a non-empty string/,
+    );
+  });
+
+  it("throws when user.name is an empty string", () => {
+    expect(() => isGuest({ id: "1", name: "" })).toThrow(TypeError);
+    expect(() => isGuest({ id: "1", name: "" })).toThrow(
       /user.name must be a non-empty string/,
     );
   });
