@@ -23,3 +23,11 @@ export function displayName(user: User): string {
   const nickname = user.profile?.nickname?.trim();
   return nickname && nickname.length > 0 ? nickname : user.name;
 }
+
+/** Initials of displayName: first letter of its first and last words, uppercased. */
+export function userInitials(user: User): string {
+  const words = displayName(user).trim().split(/\s+/);
+  const first = (words[0] ?? "").charAt(0);
+  const last = words.length > 1 ? (words.at(-1) ?? "").charAt(0) : "";
+  return (first + last).toUpperCase();
+}

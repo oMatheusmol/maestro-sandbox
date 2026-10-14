@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName } from "../src/user.js";
+import { displayName, userInitials, type User } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -65,6 +65,45 @@ describe("displayName", () => {
   it("throws when user.name is not a non-empty string", () => {
     expect(() => displayName({ id: "1", name: "" })).toThrow(TypeError);
     expect(() => displayName({ id: "1", name: "" })).toThrow(
+      /user.name must be a non-empty string/,
+    );
+  });
+});
+
+describe("userInitials", () => {
+  it("gives the first letters of the first and last name", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza" })).toBe("AS");
+  });
+
+  it("uses the nickname when set", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza", profile: { nickname: "ana" } })).toBe("A");
+    expect(userInitials({ id: "1", name: "Ana Souza", profile: { nickname: "Ana Silva" } })).toBe("AS");
+  });
+
+  it("ignores surrounding whitespace in the name and the nickname", () => {
+    expect(userInitials({ id: "1", name: " Ana Souza " })).toBe("AS");
+    expect(userInitials({ id: "1", name: "Ana Souza", profile: { nickname: " Ana Silva " } })).toBe("AS");
+  });
+
+  it("gives one letter for a single word", () => {
+    expect(userInitials({ id: "42", name: "Bruno" })).toBe("B");
+  });
+
+  it("throws when user is not an object", () => {
+    expect(() => userInitials(null as unknown as User)).toThrow(TypeError);
+    expect(() => userInitials(null as unknown as User)).toThrow(/user must be an object/);
+  });
+
+  it("throws when user.id is not a non-empty string", () => {
+    expect(() => userInitials({ id: "", name: "Ana Souza" })).toThrow(TypeError);
+    expect(() => userInitials({ id: "", name: "Ana Souza" })).toThrow(
+      /user.id must be a non-empty string/,
+    );
+  });
+
+  it("throws when user.name is not a non-empty string", () => {
+    expect(() => userInitials({ id: "1", name: "" })).toThrow(TypeError);
+    expect(() => userInitials({ id: "1", name: "" })).toThrow(
       /user.name must be a non-empty string/,
     );
   });
