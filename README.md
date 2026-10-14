@@ -23,6 +23,7 @@ import { Money } from "./src/money.js";
 const price = new Money(1250);
 price.cents; // 1250
 price.toBRL(); // "R$ 12,50"
+price.toPlainBRL(); // "12,50"
 
 const parsed = Money.fromBRL("R$ 1.234,56");
 parsed.cents; // 123456

@@ -200,6 +200,26 @@ describe("Money", () => {
     expect(m.toBRL()).toBe("R$ 1.234.567,89");
   });
 
+  it("formats a positive amount without the currency symbol", () => {
+    const m = new Money(1250);
+    expect(m.toPlainBRL()).toBe("12,50");
+  });
+
+  it("formats a negative amount without the currency symbol and keeps the minus sign", () => {
+    const m = new Money(-599);
+    expect(m.toPlainBRL()).toBe("-5,99");
+  });
+
+  it("formats zero without the currency symbol", () => {
+    const m = new Money(0);
+    expect(m.toPlainBRL()).toBe("0,00");
+  });
+
+  it("formats a thousands amount without the currency symbol", () => {
+    const m = new Money(123450);
+    expect(m.toPlainBRL()).toBe("1.234,50");
+  });
+
   it("adds two Money instances", () => {
     const a = new Money(1250);
     const b = new Money(750);
