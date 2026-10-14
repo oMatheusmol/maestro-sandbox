@@ -74,6 +74,10 @@ export class Money {
     return formatBRL(this.cents / 100);
   }
 
+  toPlainBRL(): string {
+    return this.toBRL().replace(/^R\$ /, "");
+  }
+
   add(other: Money): Money {
     return new Money(this.cents + other.cents);
   }

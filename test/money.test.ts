@@ -300,4 +300,24 @@ describe("Money", () => {
     const m = Money.fromBRL("-R$ 12,50");
     expect(m.cents).toBe(-1250);
   });
+
+  it("formats a positive amount to plain BRL string without currency symbol", () => {
+    const m = new Money(1250);
+    expect(m.toPlainBRL()).toBe("12,50");
+  });
+
+  it("formats negative amount to plain BRL string keeping the minus sign", () => {
+    const m = new Money(-599);
+    expect(m.toPlainBRL()).toBe("-5,99");
+  });
+
+  it("formats zero to plain BRL string", () => {
+    const m = new Money(0);
+    expect(m.toPlainBRL()).toBe("0,00");
+  });
+
+  it("formats large amount to plain BRL string with thousands separators", () => {
+    const m = new Money(123456789);
+    expect(m.toPlainBRL()).toBe("1.234.567,89");
+  });
 });
