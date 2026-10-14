@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName } from "../src/user.js";
+import { displayName, userInitials } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -65,6 +65,57 @@ describe("displayName", () => {
   it("throws when user.name is not a non-empty string", () => {
     expect(() => displayName({ id: "1", name: "" })).toThrow(TypeError);
     expect(() => displayName({ id: "1", name: "" })).toThrow(
+      /user.name must be a non-empty string/,
+    );
+  });
+});
+
+describe("userInitials", () => {
+  it("uses the first and last word of the full name", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza" })).toBe("AS");
+  });
+
+  it("uses one letter when the nickname is a single word", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza", profile: { nickname: "ana" } })).toBe("A");
+  });
+
+  it("uses the trimmed nickname", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza", profile: { nickname: "  ana silva  " } })).toBe(
+      "AS",
+    );
+  });
+
+  it("falls back to the name when nickname is only whitespace", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza", profile: { nickname: " \t\n " } })).toBe("AS");
+  });
+
+  it("splits words on tabs and newlines", () => {
+    expect(userInitials({ id: "1", name: "Ana\tMaria\nSouza" })).toBe("AS");
+  });
+
+  it("uses one letter for a single-word name", () => {
+    expect(userInitials({ id: "42", name: "Bruno" })).toBe("B");
+  });
+
+  it("uppercases the initials", () => {
+    expect(userInitials({ id: "1", name: "ana souza" })).toBe("AS");
+  });
+
+  it("throws when user is not an object", () => {
+    expect(() => userInitials(null as any)).toThrow(TypeError);
+    expect(() => userInitials(null as any)).toThrow(/user must be an object/);
+  });
+
+  it("throws when user.id is not a non-empty string", () => {
+    expect(() => userInitials({ id: "", name: "Ana Souza" })).toThrow(TypeError);
+    expect(() => userInitials({ id: "", name: "Ana Souza" })).toThrow(
+      /user.id must be a non-empty string/,
+    );
+  });
+
+  it("throws when user.name is not a non-empty string", () => {
+    expect(() => userInitials({ id: "1", name: "" })).toThrow(TypeError);
+    expect(() => userInitials({ id: "1", name: "" })).toThrow(
       /user.name must be a non-empty string/,
     );
   });
