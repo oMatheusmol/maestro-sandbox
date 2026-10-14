@@ -23,3 +23,8 @@ export function displayName(user: User): string {
   const nickname = user.profile?.nickname?.trim();
   return nickname && nickname.length > 0 ? nickname : user.name;
 }
+
+/** True when the display name is blank, so the user has no visible name. */
+export function isAnonymous(user: User): boolean {
+  return displayName(user).trim().length === 0;
+}

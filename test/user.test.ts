@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName } from "../src/user.js";
+import { displayName, isAnonymous } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -67,5 +67,28 @@ describe("displayName", () => {
     expect(() => displayName({ id: "1", name: "" })).toThrow(
       /user.name must be a non-empty string/,
     );
+  });
+});
+
+describe("isAnonymous", () => {
+  it("is true when the name is blank and no nickname is set", () => {
+    expect(isAnonymous({ id: "1", name: "   " })).toBe(true);
+  });
+
+  it("is true when the nickname is blank and the name is blank", () => {
+    expect(isAnonymous({ id: "1", name: " ", profile: { nickname: "  " } })).toBe(true);
+  });
+
+  it("is false when the user has a non-blank name", () => {
+    expect(isAnonymous({ id: "1", name: "Ana Souza" })).toBe(false);
+  });
+
+  it("is false when a nickname is set even if the name is blank", () => {
+    expect(isAnonymous({ id: "1", name: " ", profile: { nickname: "ana" } })).toBe(false);
+  });
+
+  it("throws a TypeError when user is not an object", () => {
+    expect(() => isAnonymous(null as any)).toThrow(TypeError);
+    expect(() => isAnonymous(null as any)).toThrow(/user must be an object/);
   });
 });

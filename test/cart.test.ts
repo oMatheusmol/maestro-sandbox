@@ -5,6 +5,7 @@ import {
   cartTotal,
   cartWeight,
   checkoutSummary,
+  isEmptyCart,
   mergeLines,
   payable,
   type WeightedCartLine,
@@ -362,5 +363,34 @@ describe("payable", () => {
 
   it("renders the checkout summary after the discount", () => {
     expect(checkoutSummary(lines, money("2,55"))).toBe("Total: R$ 22,95");
+  });
+});
+
+describe("isEmptyCart", () => {
+  const money = (value: string) => Money.fromBRL(value);
+
+  it("is true for an empty cart", () => {
+    expect(isEmptyCart([])).toBe(true);
+  });
+
+  it("is false when a line has a positive quantity", () => {
+    expect(isEmptyCart([{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }])).toBe(false);
+  });
+
+  it("throws when lines is not an array", () => {
+    expect(() => isEmptyCart(null as unknown as CartLine[])).toThrow(TypeError);
+    expect(() => isEmptyCart(null as unknown as CartLine[])).toThrow(/lines must be an array/);
+  });
+
+  it.each<[string, number]>([
+    ["zero", 0],
+    ["negative", -2],
+    ["fractional", 2.5],
+  ])("throws on a %s quantity", (_label, quantity) => {
+    const line = { productCode: "A", unitPrice: money("10,00"), quantity };
+    expect(() => isEmptyCart([line])).toThrow(RangeError);
+    expect(() => isEmptyCart([line])).toThrow(
+      /quantity for product code A must be a positive integer/,
+    );
   });
 });

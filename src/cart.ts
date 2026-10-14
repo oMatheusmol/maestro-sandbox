@@ -68,6 +68,11 @@ export function cartQuantity(lines: CartLine[]): number {
   return count;
 }
 
+/** True when the cart has no items. Validates the lines the same way as cartQuantity. */
+export function isEmptyCart(lines: CartLine[]): boolean {
+  return cartQuantity(lines) === 0;
+}
+
 /**
  * The cart weight in kilograms: each line's quantity times its unit weight.
  * Every line is validated before summing, and repeated product codes are counted
