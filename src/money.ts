@@ -88,4 +88,8 @@ export class Money {
     }
     return new Money(Math.round(this.cents * quantity));
   }
+
+  negate(): Money {
+    return new Money(0 - this.cents);
+  }
 }

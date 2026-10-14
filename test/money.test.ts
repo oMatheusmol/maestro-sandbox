@@ -283,6 +283,28 @@ describe("Money", () => {
     expect(() => m.multiplyBy(Infinity)).toThrow("quantity must be a finite number");
   });
 
+  it("negates a positive amount", () => {
+    const m = new Money(1250);
+    expect(m.negate().cents).toBe(-1250);
+  });
+
+  it("negates a negative amount", () => {
+    const m = new Money(-500);
+    expect(m.negate().cents).toBe(500);
+  });
+
+  it("negates zero to zero, not negative zero", () => {
+    const m = new Money(0);
+    expect(Object.is(m.negate().cents, 0)).toBe(true);
+  });
+
+  it("leaves the original unchanged after negate", () => {
+    const a = new Money(1250);
+    const result = a.negate();
+    expect(a.cents).toBe(1250);
+    expect(result).not.toBe(a);
+  });
+
   it("round-trips through fromBRL and toBRL", () => {
     const original = "R$ 1.234,56";
     const m = Money.fromBRL(original);
