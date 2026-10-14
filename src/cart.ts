@@ -55,6 +55,19 @@ export function cartTotal(lines: CartLine[]): Money {
   );
 }
 
+/** Counts the items in the cart: the sum of the line quantities, without reading prices. */
+export function cartQuantity(lines: CartLine[]): number {
+  if (!Array.isArray(lines)) {
+    throw new TypeError(`lines must be an array: ${typeof lines}`);
+  }
+  let count = 0;
+  for (const line of lines) {
+    assertQuantity(line);
+    count += line.quantity;
+  }
+  return count;
+}
+
 /**
  * The cart weight in kilograms: each line's quantity times its unit weight.
  * Every line is validated before summing, and repeated product codes are counted

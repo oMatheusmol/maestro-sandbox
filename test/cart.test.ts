@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type CartLine,
+  cartQuantity,
   cartTotal,
   cartWeight,
   checkoutSummary,
@@ -272,6 +273,59 @@ describe("cartWeight", () => {
     expect(() => cartWeight([weighed("A", 2, 1), weighed("A", 0, 1)])).toThrow(
       /quantity for product code A must be a positive integer/,
     );
+  });
+});
+
+describe("cartQuantity", () => {
+  const money = (value: string) => Money.fromBRL(value);
+
+  it("sums the quantities of all lines", () => {
+    expect(
+      cartQuantity([
+        { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
+        { productCode: "B", unitPrice: money("5,50"), quantity: 1 },
+        { productCode: "A", unitPrice: money("10,00"), quantity: 3 },
+      ]),
+    ).toBe(6);
+  });
+
+  it("does not read unit prices, so lines with different prices for one code still count", () => {
+    expect(
+      cartQuantity([
+        { productCode: "KB-87", unitPrice: money("899,90"), quantity: 1 },
+        { productCode: "KB-87", unitPrice: money("849,90"), quantity: 2 },
+      ]),
+    ).toBe(3);
+  });
+
+  it("returns zero for an empty cart", () => {
+    expect(cartQuantity([])).toBe(0);
+  });
+
+  it("throws when lines is not an array", () => {
+    expect(() => cartQuantity(null as unknown as CartLine[])).toThrow(TypeError);
+    expect(() => cartQuantity(null as unknown as CartLine[])).toThrow(/lines must be an array/);
+  });
+
+  it.each<[string, number]>([
+    ["zero", 0],
+    ["negative", -2],
+    ["fractional", 2.5],
+  ])("throws on a %s quantity", (_label, quantity) => {
+    const line = { productCode: "A", unitPrice: money("10,00"), quantity };
+    expect(() => cartQuantity([line])).toThrow(RangeError);
+    expect(() => cartQuantity([line])).toThrow(
+      /quantity for product code A must be a positive integer/,
+    );
+  });
+
+  it("throws when only a later line is invalid", () => {
+    expect(() =>
+      cartQuantity([
+        { productCode: "A", unitPrice: money("10,00"), quantity: 2 },
+        { productCode: "B", unitPrice: money("5,50"), quantity: 0 },
+      ]),
+    ).toThrow(/quantity for product code B must be a positive integer/);
   });
 });
 
