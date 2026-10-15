@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName } from "../src/user.js";
+import { displayName, userInitials } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -65,6 +65,41 @@ describe("displayName", () => {
   it("throws when user.name is not a non-empty string", () => {
     expect(() => displayName({ id: "1", name: "" })).toThrow(TypeError);
     expect(() => displayName({ id: "1", name: "" })).toThrow(
+      /user.name must be a non-empty string/,
+    );
+  });
+});
+
+describe("userInitials", () => {
+  it("returns the initials of the full name", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza" })).toBe("AS");
+  });
+
+  it("uses the nickname when set", () => {
+    expect(userInitials({ id: "1", name: "Ana Souza", profile: { nickname: "ana" } })).toBe("A");
+  });
+
+  it("ignores surrounding and repeated whitespace", () => {
+    expect(userInitials({ id: "1", name: "  ana   silva  " })).toBe("AS");
+  });
+
+  it("returns one letter for a single word", () => {
+    expect(userInitials({ id: "1", name: "Ana" })).toBe("A");
+  });
+
+  it("throws when the name has no word", () => {
+    expect(() => userInitials({ id: "1", name: "   " })).toThrow(TypeError);
+    expect(() => userInitials({ id: "1", name: "   " })).toThrow(
+      /user.name must contain at least one word/,
+    );
+  });
+
+  it("throws the same TypeError as displayName for an invalid user", () => {
+    expect(() => userInitials(null as any)).toThrow(/user must be an object/);
+    expect(() => userInitials({ id: "", name: "Ana Souza" })).toThrow(
+      /user.id must be a non-empty string/,
+    );
+    expect(() => userInitials({ id: "1", name: "" })).toThrow(
       /user.name must be a non-empty string/,
     );
   });
