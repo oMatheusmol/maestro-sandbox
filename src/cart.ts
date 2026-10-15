@@ -98,3 +98,5 @@ export function payable(lines: CartLine[], discount: Money): Money {
 export function checkoutSummary(lines: CartLine[], discount: Money = new Money(0)): string {
   return `Total: ${payable(lines, discount).toBRL()}`;
 }
+
+export const acceptanceScopecartprice = "cart-price";

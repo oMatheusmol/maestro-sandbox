@@ -364,3 +364,7 @@ describe("payable", () => {
     expect(checkoutSummary(lines, money("2,55"))).toBe("Total: R$ 22,95");
   });
 });
+
+import { it as fixtureItacceptanceScopecartprice, expect as fixtureExpectacceptanceScopecartprice } from "vitest";
+import { acceptanceScopecartprice } from "../src/cart.js";
+fixtureItacceptanceScopecartprice("scoped deterministic execution fixture", () => fixtureExpectacceptanceScopecartprice(acceptanceScopecartprice).toBe("cart-price"));
