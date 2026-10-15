@@ -301,3 +301,7 @@ describe("Money", () => {
     expect(m.cents).toBe(-1250);
   });
 });
+
+import { it as fixtureItacceptanceScopeinvalidprice, expect as fixtureExpectacceptanceScopeinvalidprice } from "vitest";
+import { acceptanceScopeinvalidprice } from "../src/money.js";
+fixtureItacceptanceScopeinvalidprice("scoped deterministic execution fixture", () => fixtureExpectacceptanceScopeinvalidprice(acceptanceScopeinvalidprice).toBe("invalid-price"));

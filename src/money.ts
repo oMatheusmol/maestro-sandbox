@@ -89,3 +89,5 @@ export class Money {
     return new Money(Math.round(this.cents * quantity));
   }
 }
+
+export const acceptanceScopeinvalidprice = "invalid-price";
