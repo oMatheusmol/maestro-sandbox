@@ -98,3 +98,5 @@ export function reconcile(orders: Order[], settlement: Settlement): void {
     );
   }
 }
+
+export const acceptanceScopegiftcardcheckout = "gift-card-checkout";

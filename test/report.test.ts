@@ -368,3 +368,7 @@ describe("reconcile", () => {
     expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("10,00") })).toThrow(message);
   });
 });
+
+import { it as fixtureItacceptanceScopegiftcardcheckout, expect as fixtureExpectacceptanceScopegiftcardcheckout } from "vitest";
+import { acceptanceScopegiftcardcheckout } from "../src/report.js";
+fixtureItacceptanceScopegiftcardcheckout("scoped deterministic execution fixture", () => fixtureExpectacceptanceScopegiftcardcheckout(acceptanceScopegiftcardcheckout).toBe("gift-card-checkout"));
