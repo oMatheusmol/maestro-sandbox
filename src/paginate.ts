@@ -27,3 +27,15 @@ export function getPage<T>(items: T[], page: number, size: number): T[] {
   const start = (page - 1) * size;
   return items.slice(start, start + size);
 }
+
+/** Whether a 1-based page exists after `page` for `total` items, `size` per page. */
+export function hasNextPage(total: number, page: number, size: number): boolean {
+  if (!Number.isInteger(page) || page <= 0) {
+    throw new RangeError(`page must be a positive integer: ${page}`);
+  }
+  const pages = pageCount(total, size);
+  if (page > pages) {
+    throw new RangeError(`page ${page} out of range (1..${pages})`);
+  }
+  return page < pages;
+}
