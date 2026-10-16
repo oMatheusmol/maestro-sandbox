@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPage, pageCount } from "../src/paginate.js";
+import { getPage, hasNextPage, pageCount } from "../src/paginate.js";
 
 describe("paginate", () => {
   const items = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -75,6 +75,52 @@ describe("paginate", () => {
     it("throws when size is not a positive integer in pageCount", () => {
       expect(() => pageCount(10, 0)).toThrow(RangeError);
       expect(() => pageCount(10, 0)).toThrow(/size must be a positive integer/);
+    });
+  });
+
+  describe("hasNextPage", () => {
+    it("reports a next page on the first page of a multi-page listing", () => {
+      expect(hasNextPage(10, 1, 5)).toBe(true);
+    });
+
+    it("reports a next page on an intermediate page", () => {
+      expect(hasNextPage(15, 2, 5)).toBe(true);
+    });
+
+    it("reports no next page on the last page", () => {
+      expect(hasNextPage(11, 3, 5)).toBe(false);
+    });
+
+    it("reports no next page for an empty listing on page 1", () => {
+      expect(hasNextPage(0, 1, 10)).toBe(false);
+    });
+
+    it("throws for a page past the last one", () => {
+      expect(() => hasNextPage(11, 4, 5)).toThrow(
+        new RangeError("page 4 out of range (1..3)"),
+      );
+    });
+
+    it("throws for page 2 of an empty listing", () => {
+      expect(() => hasNextPage(0, 2, 10)).toThrow(
+        new RangeError("page 2 out of range (1..1)"),
+      );
+    });
+
+    it("throws when page is not a positive integer", () => {
+      expect(() => hasNextPage(10, 0, 5)).toThrow(RangeError);
+      expect(() => hasNextPage(10, 0, 5)).toThrow(/page must be a positive integer/);
+      expect(() => hasNextPage(10, 1.5, 5)).toThrow(/page must be a positive integer/);
+    });
+
+    it("throws when total is negative or not an integer", () => {
+      expect(() => hasNextPage(-1, 1, 5)).toThrow(/total must be a non-negative integer/);
+      expect(() => hasNextPage(1.5, 1, 5)).toThrow(/total must be a non-negative integer/);
+    });
+
+    it("throws when size is not a positive integer", () => {
+      expect(() => hasNextPage(10, 1, 0)).toThrow(RangeError);
+      expect(() => hasNextPage(10, 1, 0)).toThrow(/size must be a positive integer/);
     });
   });
 });
