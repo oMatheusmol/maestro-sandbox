@@ -1,4 +1,5 @@
 import { type CartLine, payable } from "./cart.js";
+import { pointsEarned } from "./loyalty.js";
 import { Money } from "./money.js";
 import { isCalendarDate, type ShippingMethod } from "./shipping.js";
 
@@ -15,12 +16,27 @@ export interface Order {
     /** The captured YYYY-MM-DD delivery date; required for scheduled shipping. */
     deliveryDate?: string;
   };
+  /** The user who placed the order; none for a guest order, which earns no points. */
+  userId?: string;
+  /** The YYYY-MM-DD calendar date the order was placed, as supplied by the caller. */
+  placedOn?: string;
+  /** Points redeemed on the order; none when absent. */
+  pointsRedeemed?: number;
 }
 
 export interface Settlement {
   orderIds: string[];
   /** Amount paid out by the payment provider. */
   paidOut: Money;
+}
+
+export type Granularity = "day" | "month";
+
+export interface LoyaltyPeriod {
+  /** YYYY-MM-DD for "day", YYYY-MM for "month". */
+  period: string;
+  earned: number;
+  redeemed: number;
 }
 
 /**
@@ -97,4 +113,57 @@ export function reconcile(orders: Order[], settlement: Settlement): void {
       `reconciliation mismatch: expected ${expected.toBRL()}, paid out ${settlement.paidOut.toBRL()}`,
     );
   }
+}
+
+function pointsRedeemedOf(order: Order): number {
+  const redeemed = order.pointsRedeemed ?? 0;
+  if (!Number.isInteger(redeemed) || redeemed < 0) {
+    throw new RangeError(
+      `pointsRedeemed must be a non-negative integer for order ${order.id}: ${redeemed}`,
+    );
+  }
+  return redeemed;
+}
+
+/**
+ * The points a user holds: points earned on their orders less points redeemed on them.
+ * Guest orders and other users' orders are ignored.
+ * @throws {RangeError} When an order of the user has a pointsRedeemed that is not a
+ *   non-negative integer.
+ */
+export function loyaltyBalance(orders: Order[], userId: string): number {
+  return orders
+    .filter((order) => order.userId === userId)
+    .reduce(
+      (balance, order) => balance + pointsEarned(orderTotal(order)) - pointsRedeemedOf(order),
+      0,
+    );
+}
+
+/**
+ * Points earned and redeemed on user orders, grouped per day or per month and sorted
+ * ascending by period. Guest orders are ignored.
+ * @throws {RangeError} When the granularity is unknown, or an order of a user has no
+ *   valid YYYY-MM-DD placedOn, or a pointsRedeemed that is not a non-negative integer.
+ */
+export function loyaltyByPeriod(orders: Order[], granularity: Granularity): LoyaltyPeriod[] {
+  if (granularity !== "day" && granularity !== "month") {
+    throw new RangeError(`granularity must be "day" or "month": ${granularity}`);
+  }
+  const periods = new Map<string, LoyaltyPeriod>();
+  for (const order of orders) {
+    if (order.userId === undefined) continue;
+    const { placedOn } = order;
+    if (typeof placedOn !== "string" || !isCalendarDate(placedOn)) {
+      throw new RangeError(
+        `placedOn must be a valid YYYY-MM-DD date for order ${order.id}: ${placedOn}`,
+      );
+    }
+    const period = granularity === "day" ? placedOn : placedOn.slice(0, 7);
+    const entry = periods.get(period) ?? { period, earned: 0, redeemed: 0 };
+    entry.earned += pointsEarned(orderTotal(order));
+    entry.redeemed += pointsRedeemedOf(order);
+    periods.set(period, entry);
+  }
+  return [...periods.values()].sort((a, b) => a.period.localeCompare(b.period));
 }
