@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName, userInitials } from "../src/user.js";
+import { displayName, hasAvatar, userInitials, type User } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -102,5 +102,50 @@ describe("userInitials", () => {
     expect(() => userInitials({ id: "1", name: "" })).toThrow(
       /user.name must be a non-empty string/,
     );
+  });
+});
+
+describe("hasAvatar", () => {
+  it("returns false when the user has no profile", () => {
+    expect(hasAvatar({ id: "1", name: "Ana Souza" })).toBe(false);
+  });
+
+  it("returns false when the avatar URL is empty", () => {
+    expect(hasAvatar({ id: "1", name: "Ana Souza", profile: { avatarUrl: "" } })).toBe(false);
+  });
+
+  it("returns false when the avatar URL is only whitespace", () => {
+    expect(hasAvatar({ id: "1", name: "Ana Souza", profile: { avatarUrl: "  \t\n " } })).toBe(false);
+  });
+
+  it("returns false for an http URL", () => {
+    expect(
+      hasAvatar({ id: "1", name: "Ana Souza", profile: { avatarUrl: "http://example.com/a.png" } }),
+    ).toBe(false);
+  });
+
+  it("returns true for an https URL", () => {
+    expect(
+      hasAvatar({ id: "1", name: "Ana Souza", profile: { avatarUrl: "https://example.com/a.png" } }),
+    ).toBe(true);
+  });
+
+  it("returns true for an https URL with surrounding whitespace", () => {
+    expect(
+      hasAvatar({ id: "1", name: "Ana Souza", profile: { avatarUrl: "  https://example.com/a.png " } }),
+    ).toBe(true);
+  });
+
+  it("returns false when the URL is only the https:// scheme", () => {
+    expect(hasAvatar({ id: "1", name: "Ana Souza", profile: { avatarUrl: "https://" } })).toBe(false);
+  });
+
+  it("throws the same TypeError as displayName for an invalid user", () => {
+    expect(() => hasAvatar(null as unknown as User)).toThrow(TypeError);
+    expect(() => hasAvatar(null as unknown as User)).toThrow(/user must be an object/);
+    expect(() => hasAvatar({ id: "", name: "Ana Souza" })).toThrow(
+      /user.id must be a non-empty string/,
+    );
+    expect(() => hasAvatar({ id: "1", name: "" })).toThrow(/user.name must be a non-empty string/);
   });
 });
