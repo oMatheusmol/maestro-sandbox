@@ -116,7 +116,7 @@ function render(now: Date = new Date()): void {
 
   const selected = quoteFor(method, now);
   const amount = payable(cart, discount).add(selected.cost);
-  total.textContent = `Total: ${amount.toBRL()}`;
+  total.textContent = `Total do pedido: ${amount.toBRL()}`;
   shipping.textContent = selected.cost.cents === 0 ? "Free shipping" : `Shipping: ${selected.cost.toBRL()}`;
   shipping.classList.toggle("badge", selected.cost.cents === 0);
   pay.textContent = `Place order and pay ${amount.toBRL()}`;
