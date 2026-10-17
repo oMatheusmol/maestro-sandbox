@@ -34,6 +34,10 @@ Money.fromBRL("-R$ 12,50").toBRL(); // "R$ -12,50"
 The constructor rejects fractional cents. `fromBRL` rounds parsed amounts to
 the nearest cent and throws for invalid amounts such as `"invalid"`.
 
+`toBRL()` always shows two decimal digits, uses `.` as the thousands separator
+and `,` as the decimal separator, and puts the minus sign before the digits, as
+in `R$ -12,50`.
+
 `add`, `subtract`, and `multiplyBy` return new `Money` instances, leaving their
 operands unchanged. Multiplication rounds the result to integer cents and
 requires a finite quantity.
