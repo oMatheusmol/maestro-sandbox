@@ -1,5 +1,6 @@
 import { cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
 import { type Coupon, discountFor } from "../src/coupon.js";
+import { pointsCoupon, pointsEarned } from "../src/loyalty.js";
 import { Money } from "../src/money.js";
 import { type Order, orderTotal } from "../src/report.js";
 import { isCalendarDate, quoteShipping, type ShippingMethod, type ShippingQuote } from "../src/shipping.js";
@@ -28,6 +29,11 @@ const COUPONS: Coupon[] = [
   { code: "OLD5", kind: "fixed", amount: Money.fromBRL("5,00"), expiresAt: new Date("2020-01-01T00:00:00Z") },
 ];
 
+/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance resets on reload. */
+const DEMO_USER_ID = "demo-user";
+const DEMO_POINTS = 1000;
+const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
+
 const METHODS: ShippingMethod[] = ["standard", "express", "scheduled"];
 const METHOD_NAMES: Record<ShippingMethod, string> = { standard: "Standard", express: "Express", scheduled: "Scheduled" };
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -45,6 +51,9 @@ const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
 const couponError = document.querySelector<HTMLParagraphElement>("#coupon-error")!;
 const discountLine = document.querySelector<HTMLParagraphElement>("#discount")!;
+const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
+const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
+const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
 
 for (const { name, line } of CART) {
   const item = document.createElement("li");
@@ -64,6 +73,8 @@ let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
 let order: Order | undefined;
+let balance = DEMO_POINTS;
+let pointsSpent = 0;
 
 /** The UTC calendar date `days` days after `now`. */
 function utcDate(now: Date, days: number): string {
@@ -122,16 +133,39 @@ function render(now: Date = new Date()): void {
   pay.textContent = `Place order and pay ${amount.toBRL()}`;
 }
 
-/** Disables the delivery and coupon controls once the order is captured, so the total keeps matching the captured order. */
+/** Disables the delivery, coupon and points controls once the order is captured, so the total keeps matching the captured order. */
 function lockAfterCapture(): void {
   document
-    .querySelectorAll<HTMLInputElement | HTMLButtonElement>('input[name="method"], #delivery-date, #coupon input, #coupon button')
+    .querySelectorAll<HTMLInputElement | HTMLButtonElement>(
+      'input[name="method"], #delivery-date, #coupon input, #coupon button, #redeem-points',
+    )
     .forEach((control) => {
       control.disabled = true;
     });
 }
 
+/** Shows the points balance; redeeming is off when nothing is left to redeem. */
+function renderPoints(): void {
+  pointsBalance.textContent = `Points balance: ${balance}`;
+  redeemButton.disabled = balance === 0;
+}
+
+/** Puts a coupon in the one discount slot, replacing any earlier coupon or points redemption. @throws {Error} When the coupon is refused. */
+function applyDiscount(coupon: Coupon): void {
+  discount = discountFor(coupon, subtotal, new Date());
+  applied = coupon;
+  pointsSpent = 0;
+  couponError.textContent = "";
+  discountLine.textContent =
+    coupon.kind === "free-shipping"
+      ? `Coupon ${coupon.code}: free shipping`
+      : `Coupon ${coupon.code}: -${discount.toBRL()}`;
+  discountLine.hidden = false;
+  render();
+}
+
 render();
+renderPoints();
 
 couponForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -142,19 +176,16 @@ couponForm.addEventListener("submit", (event) => {
     return;
   }
   try {
-    discount = discountFor(coupon, subtotal, new Date());
+    applyDiscount(coupon);
   } catch (error) {
     couponError.textContent = error instanceof Error ? error.message : String(error);
-    return;
   }
-  applied = coupon;
-  couponError.textContent = "";
-  discountLine.textContent =
-    coupon.kind === "free-shipping"
-      ? `Coupon ${coupon.code}: free shipping`
-      : `Coupon ${coupon.code}: -${discount.toBRL()}`;
-  discountLine.hidden = false;
-  render();
+});
+
+redeemButton.addEventListener("click", () => {
+  const points = Math.min(balance, subtotal.cents);
+  applyDiscount(pointsCoupon(points, POINTS_EXPIRES_AT));
+  pointsSpent = points;
 });
 
 form.addEventListener("change", () => {
@@ -176,7 +207,20 @@ form.addEventListener("submit", (event) => {
   }
   const quote = quoteFor(method, now);
   const delivery = { method, cost: quote.cost, deliveryDate: quote.deliveryDate };
-  order = { id: crypto.randomUUID(), lines: cart, discount, shipping: delivery };
+  order = {
+    id: crypto.randomUUID(),
+    lines: cart,
+    discount,
+    shipping: delivery,
+    userId: DEMO_USER_ID,
+    placedOn: utcDate(now, 0),
+    pointsRedeemed: pointsSpent,
+  };
+  const earned = pointsEarned(orderTotal(order));
+  balance = balance - pointsSpent + earned;
+  renderPoints();
+  pointsEarnedLine.textContent = `Points earned on this order: ${earned}`;
+  pointsEarnedLine.hidden = false;
   pay.disabled = true;
   lockAfterCapture();
   placed.textContent = "Order placed. You will get an email with the tracking code.";
