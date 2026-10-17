@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { Money } from "../src/money.js";
-import { type Order, reconcile, type Settlement } from "../src/report.js";
+import {
+  type Granularity,
+  loyaltyBalance,
+  loyaltyByPeriod,
+  type Order,
+  reconcile,
+  type Settlement,
+} from "../src/report.js";
 
 describe("reconcile", () => {
   const money = (value: string) => Money.fromBRL(value);
@@ -366,5 +373,104 @@ describe("reconcile", () => {
     ];
     expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("10,00") })).toThrow(error);
     expect(() => reconcile(orders, { orderIds: ["o1"], paidOut: money("10,00") })).toThrow(message);
+  });
+});
+
+describe("loyaltyBalance", () => {
+  const money = (value: string) => Money.fromBRL(value);
+  const lines = (value: string) => [{ productCode: "A", unitPrice: money(value), quantity: 1 }];
+
+  it("adds the points earned on each order of the user", () => {
+    const orders: Order[] = [
+      { id: "o1", userId: "u1", lines: lines("10,00") },
+      { id: "o2", userId: "u1", lines: lines("25,90"), placedOn: "2026-10-02" },
+    ];
+    expect(loyaltyBalance(orders, "u1")).toBe(35);
+  });
+
+  it("subtracts pointsRedeemed from the earned points", () => {
+    const orders: Order[] = [{ id: "o1", userId: "u1", lines: lines("50,00"), pointsRedeemed: 20 }];
+    expect(loyaltyBalance(orders, "u1")).toBe(30);
+  });
+
+  it("ignores other users' orders and guest orders", () => {
+    const orders: Order[] = [
+      { id: "o1", userId: "u1", lines: lines("10,00") },
+      { id: "o2", userId: "u2", lines: lines("300,00") },
+      { id: "o3", lines: lines("400,00") },
+    ];
+    expect(loyaltyBalance(orders, "u1")).toBe(10);
+  });
+
+  it("returns 0 for a user with no orders", () => {
+    const orders: Order[] = [{ id: "o1", lines: lines("10,00") }];
+    expect(loyaltyBalance(orders, "u1")).toBe(0);
+  });
+
+  it.each([
+    { label: "negative", pointsRedeemed: -5 },
+    { label: "fractional", pointsRedeemed: 1.5 },
+  ])("throws RangeError naming the order when pointsRedeemed is $label", ({ pointsRedeemed }) => {
+    const orders: Order[] = [{ id: "o-7", userId: "u1", lines: lines("10,00"), pointsRedeemed }];
+    expect(() => loyaltyBalance(orders, "u1")).toThrow(RangeError);
+    expect(() => loyaltyBalance(orders, "u1")).toThrow(
+      /^pointsRedeemed must be a non-negative integer for order o-7: /,
+    );
+  });
+});
+
+describe("loyaltyByPeriod", () => {
+  const money = (value: string) => Money.fromBRL(value);
+  const lines = (value: string) => [{ productCode: "A", unitPrice: money(value), quantity: 1 }];
+  const orders: Order[] = [
+    { id: "o1", userId: "u1", lines: lines("10,00"), placedOn: "2026-09-30" },
+    { id: "o2", userId: "u1", lines: lines("20,00"), placedOn: "2026-10-01", pointsRedeemed: 5 },
+    { id: "o3", userId: "u2", lines: lines("7,00"), placedOn: "2026-10-01" },
+    { id: "o4", lines: lines("50,00"), placedOn: "2026-10-01" },
+    { id: "o5", userId: "u1", lines: lines("4,00"), placedOn: "2026-10-15" },
+  ];
+
+  it("groups points per day", () => {
+    expect(loyaltyByPeriod(orders, "day")).toEqual([
+      { period: "2026-09-30", earned: 10, redeemed: 0 },
+      { period: "2026-10-01", earned: 27, redeemed: 5 },
+      { period: "2026-10-15", earned: 4, redeemed: 0 },
+    ]);
+  });
+
+  it("groups points per month", () => {
+    expect(loyaltyByPeriod(orders, "month")).toEqual([
+      { period: "2026-09", earned: 10, redeemed: 0 },
+      { period: "2026-10", earned: 31, redeemed: 5 },
+    ]);
+  });
+
+  it("sorts periods ascending", () => {
+    expect(loyaltyByPeriod([...orders].reverse(), "day").map((p) => p.period)).toEqual([
+      "2026-09-30",
+      "2026-10-01",
+      "2026-10-15",
+    ]);
+  });
+
+  it("returns an empty list when no order has a userId", () => {
+    expect(loyaltyByPeriod([{ id: "o1", lines: lines("10,00") }], "day")).toEqual([]);
+  });
+
+  it.each([
+    { label: "missing", placedOn: undefined },
+    { label: "impossible", placedOn: "2026-02-30" },
+  ])("throws RangeError naming the order when placedOn is $label", ({ placedOn }) => {
+    const bad: Order[] = [{ id: "o-9", userId: "u1", lines: lines("10,00"), placedOn }];
+    expect(() => loyaltyByPeriod(bad, "day")).toThrow(RangeError);
+    expect(() => loyaltyByPeriod(bad, "day")).toThrow(
+      /^placedOn must be a valid YYYY-MM-DD date for order o-9: /,
+    );
+  });
+
+  it("throws RangeError for an unknown granularity", () => {
+    const week = "week" as unknown as Granularity;
+    expect(() => loyaltyByPeriod(orders, week)).toThrow(RangeError);
+    expect(() => loyaltyByPeriod(orders, week)).toThrow(/^granularity must be "day" or "month": week$/);
   });
 });
