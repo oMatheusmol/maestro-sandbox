@@ -51,3 +51,22 @@ new Money(101).multiplyBy(0.5).cents; // 51
 price.cents; // 1250 (unchanged)
 fee.cents; // 250 (unchanged)
 ```
+
+## Loyalty points
+
+`src/loyalty.ts` holds the loyalty rules. It stores nothing: it computes points
+from a `Money` total and builds a coupon from a point count.
+
+- Earning: 1 point per whole real of the paid total (`POINTS_PER_REAL` = 1).
+  Fractional reais are dropped, so R$ 0,99 earns 0 points and R$ 1.128,70 earns
+  1128 points.
+- Redemption: 1 point is worth R$ 0,01 (`CENTS_PER_POINT` = 1), so 100 points
+  take R$ 1,00 off.
+
+```ts
+import { Money } from "./src/money.js";
+import { pointsCoupon, pointsEarned } from "./src/loyalty.js";
+
+pointsEarned(Money.fromBRL("1.128,70")); // 1128
+pointsCoupon(250, new Date("2030-06-30T23:59:59.999Z")); // fixed coupon of R$ 2,50
+```
