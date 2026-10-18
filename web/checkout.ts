@@ -1,4 +1,4 @@
-import { cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
+import { cartQuantity, cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
 import { type Coupon, discountFor } from "../src/coupon.js";
 import { pointsCoupon, pointsEarned } from "../src/loyalty.js";
 import { Money } from "../src/money.js";
@@ -69,6 +69,7 @@ for (const { name, line } of CART) {
 const cart = CART.map((c) => c.line);
 const subtotal = cartTotal(cart);
 const weightKg = cartWeight(cart);
+const itemCount = cartQuantity(cart);
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
@@ -127,7 +128,7 @@ function render(now: Date = new Date()): void {
 
   const selected = quoteFor(method, now);
   const amount = payable(cart, discount).add(selected.cost);
-  total.textContent = `Total do pedido: ${amount.toBRL()}`;
+  total.textContent = `Total (${itemCount} items): ${amount.toBRL()}`;
   shipping.textContent = selected.cost.cents === 0 ? "Free shipping" : `Shipping: ${selected.cost.toBRL()}`;
   shipping.classList.toggle("badge", selected.cost.cents === 0);
   pay.textContent = `Place order and pay ${amount.toBRL()}`;

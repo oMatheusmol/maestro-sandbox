@@ -50,7 +50,7 @@ test("defaults to standard shipping, free, with the date disabled", async ({ pag
   await expect(page.getByLabel("Delivery date")).toBeDisabled();
   await expect(page.locator("#free-shipping")).toHaveText("Free shipping");
   await expect(page.locator("#free-shipping")).toHaveClass(/\bbadge\b/);
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.128,70");
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.128,70");
 });
 
@@ -68,18 +68,18 @@ test("each option recomputes the shipping line, total and pay label", async ({ p
   await expect(option(page, "Express").getByRole("radio")).toBeChecked();
   await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
   await expect(page.locator("#free-shipping")).not.toHaveClass(/\bbadge\b/);
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.155,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.155,70");
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.155,70");
 
   await option(page, "Scheduled").click();
   await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 5,00");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.133,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.133,70");
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.133,70");
 
   await option(page, "Standard").click();
   await expect(page.locator("#free-shipping")).toHaveText("Free shipping");
   await expect(page.locator("#free-shipping")).toHaveClass(/\bbadge\b/);
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.128,70");
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.128,70");
 });
 
@@ -107,7 +107,7 @@ test("requires a future delivery date for scheduled shipping", async ({ page }) 
   await pay(page).click();
   await expect(page.locator("#placed")).toBeEmpty();
   await expect(page.locator("#delivery-details")).toBeHidden();
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.133,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.133,70");
 });
 
 test("switching away from scheduled drops the date requirement and the date", async ({ page }) => {
@@ -170,7 +170,7 @@ test("keeps the captured total when the method is changed after capture", async 
   await option(page, "Standard").click({ force: true });
   await expect(option(page, "Express").getByRole("radio")).toBeChecked();
   await expect(option(page, "Standard").getByRole("radio")).not.toBeChecked();
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.155,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.155,70");
   await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.155,70");
   await expect(page.locator("#delivery-details")).toHaveText("Delivery: Express. Shipping: R$ 27,00. Total: R$ 1.155,70.");
@@ -179,18 +179,18 @@ test("keeps the captured total when the method is changed after capture", async 
 test("keeps the current quote when a coupon is unknown or expired", async ({ page }) => {
   await option(page, "Express").click();
   await applyCoupon(page, "WELCOME10");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.042,83");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.042,83");
 
   await applyCoupon(page, "NOPE");
   await expect(page.getByRole("alert")).toHaveText("Unknown coupon code: NOPE");
   await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.042,83");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.042,83");
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.042,83");
 
   await applyCoupon(page, "OLD5");
   await expect(page.getByRole("alert")).toHaveText("coupon OLD5 expired on 2020-01-01T00:00:00.000Z");
   await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.042,83");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.042,83");
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.042,83");
 });
 
@@ -199,19 +199,19 @@ test("applies and replaces free-shipping coupons, keeping express and scheduled 
   await applyCoupon(page, "FREESHIP");
   await expect(page.locator("#discount")).toHaveText("Coupon FREESHIP: free shipping");
   await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.155,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.155,70");
 
   await applyCoupon(page, "WELCOME10");
   await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.042,83");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.042,83");
 
   await applyCoupon(page, "FREESHIP");
   await expect(page.locator("#discount")).toHaveText("Coupon FREESHIP: free shipping");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.155,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.155,70");
 
   await option(page, "Scheduled").click();
   await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 5,00");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.133,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.133,70");
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.133,70");
 });
 

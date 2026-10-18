@@ -4,9 +4,9 @@ import { photograph } from "./screens.js";
 /** The made-up demo balance every shopper starts with at checkout. */
 const DEMO_POINTS = 1000;
 
-/** The digits of a BRL amount as cents: "Total do pedido: R$ 1.118,70" reads as 111870. */
+/** The digits of a BRL amount as cents, read after "R$": "Total (4 items): R$ 1.118,70" reads as 111870. */
 function centsIn(text: string | null): number {
-  return Number((text ?? "").replace(/\D/g, ""));
+  return Number((text ?? "").replace(/.*R\$/, "").replace(/\D/g, ""));
 }
 
 async function fillShipping(page: Page): Promise<void> {
@@ -34,7 +34,7 @@ test("shows the demo balance and a Redeem points button", async ({ page }) => {
 
 test("redeeming points takes the points off the total and the pay button", async ({ page }, testInfo) => {
   await page.goto("/");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.128,70");
   const totalBefore = centsIn(await page.locator("#total").textContent());
 
   await page.getByRole("button", { name: "Redeem points", exact: true }).click();
@@ -58,7 +58,7 @@ test("applying a coupon code after redeeming removes the points discount", async
   await page.getByRole("button", { name: "Apply", exact: true }).click();
 
   await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
-  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.015,83");
+  await expect(page.locator("#total")).toHaveText("Total (4 items): R$ 1.015,83");
   await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.015,83");
 });
 
