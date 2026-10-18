@@ -28,6 +28,27 @@ describe("paginate", () => {
         new RangeError("page 4 out of range (1..3)"),
       );
     });
+
+    const twentyOne = Array.from({ length: 21 }, (_, i) => i + 1);
+
+    it("counts 3 pages for 21 products at 10 per page", () => {
+      expect(pageCount(21, 10)).toBe(3);
+    });
+
+    it("returns only the last product on page 3 of 21 products", () => {
+      expect(getPage(twentyOne, 3, 10)).toEqual([21]);
+    });
+
+    it("throws for a page past the last one of 21 products", () => {
+      expect(() => getPage(twentyOne, 4, 10)).toThrow(
+        new RangeError("page 4 out of range (1..3)"),
+      );
+    });
+
+    it("reports a next page on page 2 of 21 products and none on page 3", () => {
+      expect(hasNextPage(21, 2, 10)).toBe(true);
+      expect(hasNextPage(21, 3, 10)).toBe(false);
+    });
   });
 
   describe("empty listing", () => {
