@@ -14,6 +14,24 @@ describe("displayName", () => {
     expect(displayName({ id: "42", name: "Bruno Lima" })).toBe("Bruno Lima");
   });
 
+  it("falls back to the account email when the user has no profile", () => {
+    expect(displayName({ id: "42", name: "Bruno Lima", email: "bruno@example.com" })).toBe(
+      "bruno@example.com",
+    );
+  });
+
+  it("falls back to the account email when the nickname is empty", () => {
+    expect(
+      displayName({ id: "1", name: "Ana Souza", email: "ana@example.com", profile: { nickname: " " } }),
+    ).toBe("ana@example.com");
+  });
+
+  it("prefers the nickname over the account email", () => {
+    expect(
+      displayName({ id: "1", name: "Ana Souza", email: "ana@example.com", profile: { nickname: "ana" } }),
+    ).toBe("ana");
+  });
+
   it("trims leading whitespace from nickname", () => {
     expect(displayName({ id: "1", name: "Ana Souza", profile: { nickname: "  ana" } })).toBe("ana");
   });
