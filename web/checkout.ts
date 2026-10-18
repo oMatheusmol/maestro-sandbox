@@ -1,4 +1,4 @@
-import { cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
+import { cartQuantity, cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
 import { type Coupon, discountFor } from "../src/coupon.js";
 import { pointsCoupon, pointsEarned } from "../src/loyalty.js";
 import { Money } from "../src/money.js";
@@ -69,6 +69,11 @@ for (const { name, line } of CART) {
 const cart = CART.map((c) => c.line);
 const subtotal = cartTotal(cart);
 const weightKg = cartWeight(cart);
+const quantity = cartQuantity(cart);
+const itemCount = document.createElement("p");
+itemCount.className = "item-count";
+itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+total.after(itemCount);
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
