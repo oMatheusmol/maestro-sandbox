@@ -6,10 +6,14 @@ export interface UserProfile {
 export interface User {
   id: string;
   name: string;
+  email?: string;
   profile?: UserProfile;
 }
 
-/** Name shown in the header: nickname when set, otherwise the full name. */
+/**
+ * Name shown in the header: nickname when set, otherwise the full name.
+ * When the name is empty, the trimmed account email is shown instead.
+ */
 export function displayName(user: User): string {
   if (!user || typeof user !== "object") {
     throw new TypeError(`user must be an object: ${typeof user}`);
@@ -18,7 +22,11 @@ export function displayName(user: User): string {
     throw new TypeError(`user.id must be a non-empty string: ${user.id}`);
   }
   if (typeof user.name !== "string" || user.name.length === 0) {
-    throw new TypeError(`user.name must be a non-empty string: ${user.name}`);
+    const email = user.email?.trim() ?? "";
+    if (email.length === 0) {
+      throw new TypeError(`user.name must be a non-empty string: ${user.name}`);
+    }
+    return email;
   }
   const nickname = user.profile?.nickname?.trim();
   return nickname && nickname.length > 0 ? nickname : user.name;

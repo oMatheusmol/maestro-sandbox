@@ -68,6 +68,20 @@ describe("displayName", () => {
       /user.name must be a non-empty string/,
     );
   });
+
+  it("falls back to the account email when the name is empty", () => {
+    expect(displayName({ id: "1", name: "", email: "ana@example.com" })).toBe("ana@example.com");
+  });
+
+  it("trims the account email", () => {
+    expect(displayName({ id: "1", name: "", email: "  ana@example.com " })).toBe("ana@example.com");
+  });
+
+  it("throws when the name is empty and the email is only spaces", () => {
+    expect(() => displayName({ id: "1", name: "", email: "   " })).toThrow(
+      /user.name must be a non-empty string/,
+    );
+  });
 });
 
 describe("userInitials", () => {
