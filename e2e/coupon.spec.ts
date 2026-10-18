@@ -62,6 +62,22 @@ test("takes a fixed coupon off the merchandise with express shipping already cho
   await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.105,70");
 });
 
+test("names the coupon code on the order confirmation after a coupon order", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Coupon code").fill("WELCOME10");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
+
+  await page.getByLabel("Full name").fill("Alex Example");
+  await page.getByLabel("Street and number").fill("Example Street 123");
+  await page.getByLabel("CEP", { exact: true }).fill("12345-678");
+  await page.getByRole("button", { name: /Place order and pay/ }).click();
+
+  await expect(page.getByRole("status")).toHaveText(
+    "Order placed. You will get an email with the tracking code. Coupon WELCOME10 applied.",
+  );
+});
+
 test("shows the coupon field and Apply button above the pay button", async ({ page, viewport }) => {
   await page.goto("/");
 
