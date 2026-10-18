@@ -83,6 +83,19 @@ test("each option recomputes the shipping line, total and pay label", async ({ p
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.128,70");
 });
 
+test("shows the estimated delivery five business days out under the shipping cost", async ({ page, viewport }) => {
+  const estimate = page.locator("#estimated-delivery");
+  await expect(estimate).toHaveText("Estimated delivery: 2026-10-16");
+  await option(page, "Express").click();
+  await expect(estimate).toHaveText("Estimated delivery: 2026-10-16");
+
+  const shippingBox = await boxOf(page.locator("#free-shipping"));
+  const estimateBox = await boxOf(estimate);
+  expect(estimateBox.y).toBeGreaterThanOrEqual(shippingBox.y + shippingBox.height);
+  expect(estimateBox.x).toBeGreaterThanOrEqual(0);
+  expect(estimateBox.x + estimateBox.width).toBeLessThanOrEqual(viewport?.width ?? 0);
+});
+
 test("requires a future delivery date for scheduled shipping", async ({ page }) => {
   await option(page, "Scheduled").click();
   const date = page.getByLabel("Delivery date");

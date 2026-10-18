@@ -81,6 +81,19 @@ function utcDate(now: Date, days: number): string {
   return new Date(now.getTime() + days * DAY_MS).toISOString().slice(0, 10);
 }
 
+/** The UTC calendar date `businessDays` weekdays after `now`, skipping Saturdays and Sundays. */
+function businessDaysAfter(now: Date, businessDays: number): string {
+  let date = now;
+  let remaining = businessDays;
+  while (remaining > 0) {
+    date = new Date(date.getTime() + DAY_MS);
+    if (date.getUTCDay() !== 0 && date.getUTCDay() !== 6) {
+      remaining -= 1;
+    }
+  }
+  return date.toISOString().slice(0, 10);
+}
+
 /** The typed delivery date when it is a real date after today's UTC date, else undefined. */
 function acceptedDate(now: Date): string | undefined {
   const typed = dateInput.value;
@@ -130,6 +143,7 @@ function render(now: Date = new Date()): void {
   total.textContent = `Total do pedido: ${amount.toBRL()}`;
   shipping.textContent = selected.cost.cents === 0 ? "Free shipping" : `Shipping: ${selected.cost.toBRL()}`;
   shipping.classList.toggle("badge", selected.cost.cents === 0);
+  estimate.textContent = `Estimated delivery: ${businessDaysAfter(now, 5)}`;
   pay.textContent = `Place order and pay ${amount.toBRL()}`;
 }
 
@@ -163,6 +177,11 @@ function applyDiscount(coupon: Coupon): void {
   discountLine.hidden = false;
   render();
 }
+
+const estimate = document.createElement("p");
+estimate.id = "estimated-delivery";
+estimate.className = "free-shipping";
+shipping.after(estimate);
 
 render();
 renderPoints();
