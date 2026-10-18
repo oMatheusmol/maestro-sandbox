@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayName, hasAvatar, userInitials, type User } from "../src/user.js";
+import { displayName, hasAvatar, hasProfile, userInitials, type User } from "../src/user.js";
 
 describe("displayName", () => {
   it("prefers the nickname", () => {
@@ -147,5 +147,34 @@ describe("hasAvatar", () => {
       /user.id must be a non-empty string/,
     );
     expect(() => hasAvatar({ id: "1", name: "" })).toThrow(/user.name must be a non-empty string/);
+  });
+});
+
+describe("hasProfile", () => {
+  it("returns false when the user has no profile", () => {
+    expect(hasProfile({ id: "1", name: "Ana Souza" })).toBe(false);
+  });
+
+  it("returns false when the profile is null", () => {
+    expect(hasProfile({ id: "1", name: "Ana Souza", profile: null as unknown as undefined })).toBe(
+      false,
+    );
+  });
+
+  it("returns true for an empty profile object", () => {
+    expect(hasProfile({ id: "1", name: "Ana Souza", profile: {} })).toBe(true);
+  });
+
+  it("returns true when the profile has a nickname", () => {
+    expect(hasProfile({ id: "1", name: "Ana Souza", profile: { nickname: "ana" } })).toBe(true);
+  });
+
+  it("throws the same TypeError as displayName for an invalid user", () => {
+    expect(() => hasProfile(null as unknown as User)).toThrow(TypeError);
+    expect(() => hasProfile(null as unknown as User)).toThrow(/user must be an object/);
+    expect(() => hasProfile({ id: "", name: "Ana Souza" })).toThrow(
+      /user.id must be a non-empty string/,
+    );
+    expect(() => hasProfile({ id: "1", name: "" })).toThrow(/user.name must be a non-empty string/);
   });
 });

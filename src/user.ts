@@ -39,6 +39,20 @@ export function hasAvatar(user: User): boolean {
   return /^https:\/\/.+/.test(avatarUrl);
 }
 
+/** True when the user's profile is an object, even an empty one. */
+export function hasProfile(user: User): boolean {
+  if (!user || typeof user !== "object") {
+    throw new TypeError(`user must be an object: ${typeof user}`);
+  }
+  if (typeof user.id !== "string" || user.id.length === 0) {
+    throw new TypeError(`user.id must be a non-empty string: ${user.id}`);
+  }
+  if (typeof user.name !== "string" || user.name.length === 0) {
+    throw new TypeError(`user.name must be a non-empty string: ${user.name}`);
+  }
+  return typeof user.profile === "object" && user.profile !== null;
+}
+
 /** Uppercase initials of displayName: first and last word, or one letter for a single word. */
 export function userInitials(user: User): string {
   const [first = "", ...rest] = displayName(user).trim().split(/\s+/);
