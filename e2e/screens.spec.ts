@@ -3,7 +3,7 @@ import { photograph } from "./screens.js";
 
 /** The shop's screens, each photographed in every viewport. */
 const SCREENS = [
-  { name: "checkout", path: "/", heading: "Checkout" },
+  { name: "checkout", path: "/", heading: "Checkout", shot: "checkout-open" },
   { name: "recorder", path: "/recorder.html", heading: "Voice note" },
 ];
 
@@ -17,7 +17,7 @@ test("menu uses Arial when navigating between screens", async ({ page }, testInf
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
   await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
   await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
-  await photograph(page, testInfo, "checkout");
+  expect(await photograph(page, testInfo, "checkout-menu")).toMatch(/checkout-menu\.png$/);
 
   await voiceNote.click();
   await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
@@ -29,7 +29,7 @@ test("menu uses Arial when navigating between screens", async ({ page }, testInf
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
   await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
   await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
-  await photograph(page, testInfo, "checkout");
+  expect(await photograph(page, testInfo, "checkout-return")).toMatch(/checkout-return\.png$/);
 });
 
 async function expectReadableText(elements: Locator): Promise<void> {
@@ -71,7 +71,7 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
   await page.getByRole("button", { name: /Place order and pay/ }).click();
   await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
   await expectReadableText(page.getByRole("status"));
-  await photograph(page, testInfo, "checkout");
+  expect(await photograph(page, testInfo, "checkout-order-placed")).toMatch(/checkout-order-placed\.png$/);
 
   await context.grantPermissions(["microphone"]);
   await page.route("/api/notes", (route) => route.fulfill({ status: 503 }));
@@ -91,7 +91,7 @@ test("keeps the shared page background dark green across navigation", async ({ p
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
   await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
-  await photograph(page, testInfo, "checkout");
+  expect(await photograph(page, testInfo, "checkout-background")).toMatch(/checkout-background\.png$/);
 
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
@@ -125,7 +125,8 @@ for (const screen of SCREENS) {
       await expect(total).toBeVisible();
     }
 
-    await photograph(page, testInfo, screen.name);
+    const shot = screen.shot ?? screen.name;
+    expect(await photograph(page, testInfo, shot)).toMatch(new RegExp(`${shot}\\.png$`));
   });
 }
 
@@ -147,7 +148,7 @@ test("shows the free shipping badge under the total", async ({ page, viewport },
     expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(viewport.width);
   }
 
-  await photograph(page, testInfo, "checkout");
+  expect(await photograph(page, testInfo, "checkout-free-shipping")).toMatch(/checkout-free-shipping\.png$/);
 });
 
 test("records a voice note with audio data", async ({ page, context }) => {
