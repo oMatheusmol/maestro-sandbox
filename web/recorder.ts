@@ -34,6 +34,7 @@ record.addEventListener("click", async () => {
   });
   // If the recorder never reports its start, release the microphone and let the person try again.
   const startTimer = setTimeout(() => {
+    if (startingRecorder.state !== "inactive") startingRecorder.stop();
     startingRecorder.stream.getTracks().forEach((track) => track.stop());
     recorder = null;
     record.disabled = false;
