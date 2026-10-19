@@ -12,7 +12,9 @@ const EMPTY_RECORDER = `
     addEventListener(type, listener) {
       (this.listeners[type] ||= []).push(listener);
     }
-    start() {}
+    start() {
+      setTimeout(() => (this.listeners.start || []).forEach((listener) => listener(new Event("start"))), 0);
+    }
     stop() {
       setTimeout(() => {
         (this.listeners.dataavailable || []).forEach((listener) => listener({ data: new Blob([]) }));
@@ -33,7 +35,9 @@ const LIVE_RECORDER = `
     addEventListener(type, listener) {
       (this.listeners[type] ||= []).push(listener);
     }
-    start() {}
+    start() {
+      setTimeout(() => (this.listeners.start || []).forEach((listener) => listener(new Event("start"))), 0);
+    }
     stop() {
       setTimeout(() => {
         const live = this.stream.getTracks().some((track) => track.readyState === "live");
@@ -42,6 +46,19 @@ const LIVE_RECORDER = `
         (this.listeners.stop || []).forEach((listener) => listener(new Event("stop")));
       }, 0);
     }
+  };
+`;
+
+// Replaces MediaRecorder with a recorder whose start() never dispatches the start event.
+const SILENT_START_RECORDER = `
+  window.MediaRecorder = class {
+    constructor(stream) {
+      this.stream = stream;
+      this.mimeType = "audio/webm";
+    }
+    addEventListener() {}
+    start() {}
+    stop() {}
   };
 `;
 
@@ -174,5 +191,20 @@ test("reports no captured audio when the microphone is refused", async ({ page }
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
   await expect(page.getByRole("status")).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
+  await photograph(page, testInfo, "recorder");
+});
+
+test("reports a recorder whose start event never fires and re-enables Record", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
+  await page.addInitScript(SILENT_START_RECORDER);
+  await page.goto("/recorder.html");
+
+  const recordButton = page.getByRole("button", { name: "Record", exact: true });
+  const stopButton = page.getByRole("button", { name: "Stop", exact: true });
+
+  await recordButton.click();
+  await expect(page.getByRole("status")).toHaveText("Recording did not start. Try again.", { timeout: 15_000 });
+  await expect(recordButton).toBeEnabled();
+  await expect(stopButton).toBeDisabled();
   await photograph(page, testInfo, "recorder");
 });
