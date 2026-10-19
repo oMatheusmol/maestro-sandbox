@@ -4,7 +4,7 @@ import { photograph } from "./screens.js";
 /** The shop's screens, each photographed in every viewport. */
 const SCREENS = [
   { name: "checkout", path: "/", heading: "Checkout", shot: "checkout-open" },
-  { name: "recorder", path: "/recorder.html", heading: "Voice note" },
+  { name: "recorder", path: "/recorder.html", heading: "Voice note", shot: "recorder-screen" },
 ];
 
 test("menu uses Arial when navigating between screens", async ({ page }, testInfo) => {
