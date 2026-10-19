@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { photograph } from "./screens.js";
 
@@ -30,7 +31,7 @@ test("shows a pending microphone status and keeps Record disabled until the requ
   await recordButton.click();
   await expect(status).toHaveText("Waiting for microphone permission…");
   await expect(recordButton).toBeDisabled();
-  await photograph(page, testInfo, "recorder");
+  expect(existsSync(await photograph(page, testInfo, "recorder-pending"))).toBe(true);
 
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(true));
   await expect(status).toHaveText("Recording…");
@@ -50,5 +51,5 @@ test("shows an error status and re-enables Record when the microphone is refused
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
   await expect(status).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(recordButton).toBeEnabled();
-  await photograph(page, testInfo, "recorder");
+  expect(existsSync(await photograph(page, testInfo, "recorder-error"))).toBe(true);
 });

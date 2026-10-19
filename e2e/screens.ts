@@ -6,8 +6,11 @@ import type { Page, TestInfo } from "@playwright/test";
  * Playwright project's name: under MAESTRO_SCREENSHOTS when the maestro runs
  * the tests, which keeps them with the run, else under test-results/screens.
  * Screen names are lower case words with dashes, such as `checkout`.
+ * Returns the path of the saved file.
  */
-export async function photograph(page: Page, testInfo: TestInfo, screen: string): Promise<void> {
+export async function photograph(page: Page, testInfo: TestInfo, screen: string): Promise<string> {
   const dir = process.env.MAESTRO_SCREENSHOTS ?? join("test-results", "screens");
-  await page.screenshot({ path: join(dir, testInfo.project.name, `${screen}.png`), fullPage: true });
+  const path = join(dir, testInfo.project.name, `${screen}.png`);
+  await page.screenshot({ path, fullPage: true });
+  return path;
 }
