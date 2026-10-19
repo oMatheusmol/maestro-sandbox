@@ -69,7 +69,7 @@ test("posts the recorded audio, not an empty body", async ({ page, context }, te
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
   await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
-  await page.waitForTimeout(500);
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
 
   const upload = page.waitForResponse("/api/notes");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
@@ -85,7 +85,7 @@ test("uploads the audio captured before the microphone is released", async ({ pa
   await page.goto("/recorder.html");
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
   const upload = page.waitForResponse("/api/notes");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   expect((await upload).status()).toBe(201);
@@ -105,7 +105,7 @@ test("sends nothing for an empty recording", async ({ page, context }, testInfo)
   await page.goto("/recorder.html");
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
   await page.getByRole("button", { name: "Stop", exact: true }).click();
 
   await expect(page.getByRole("status")).toHaveText("Nothing was recorded. Try again.");
