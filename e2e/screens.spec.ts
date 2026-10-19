@@ -23,7 +23,7 @@ test("menu uses Arial when navigating between screens", async ({ page }, testInf
   await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
   await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
   await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-menu")).toMatch(/recorder-menu\.png$/);
 
   await checkout.click();
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
@@ -83,7 +83,7 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("Not sent (503). Try again.");
   await expectReadableText(page.locator(".status, .notes li"));
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-error")).toMatch(/recorder-error\.png$/);
 });
 
 test("keeps the shared page background dark green across navigation", async ({ page }, testInfo) => {
@@ -95,7 +95,7 @@ test("keeps the shared page background dark green across navigation", async ({ p
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
   await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-background")).toMatch(/recorder-background\.png$/);
 
   await page.getByRole("link", { name: "Checkout", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
