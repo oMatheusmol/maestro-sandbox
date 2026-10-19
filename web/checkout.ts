@@ -68,7 +68,6 @@ const discountLine = document.querySelector<HTMLParagraphElement>("#discount")!;
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
-const orderNumberLine = document.querySelector<HTMLParagraphElement>("#order-number")!;
 
 for (const { name, line } of CART) {
   const item = document.createElement("li");
@@ -203,13 +202,11 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
   return saved as SavedOrder;
 }
 
-/** Shows a placed order: its number and delivery details, and locks the controls so the captured order stays as it was. */
+/** Shows a placed order: its number in the confirmation and its delivery details, and locks the controls so the captured order stays as it was. */
 function showPlaced(saved: SavedOrder): void {
   pay.disabled = true;
   lockAfterCapture();
-  placed.textContent = "Order placed. You will get an email with the tracking code.";
-  orderNumberLine.textContent = `Order number: ${saved.number}`;
-  orderNumberLine.hidden = false;
+  placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
   const date = saved.deliveryDate ? ` for ${saved.deliveryDate}` : "";
   deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[saved.method]}${date}. Shipping: ${new Money(saved.costCents).toBRL()}. Total: ${new Money(saved.totalCents).toBRL()}.`;
   deliveryDetails.hidden = false;
