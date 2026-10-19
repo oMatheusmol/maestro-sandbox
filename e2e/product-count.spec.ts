@@ -7,6 +7,7 @@ test("shows the number of distinct products, not the item count, above the total
   // Three products, four items: USB-C cable 2 m is in the cart twice.
   const count = page.locator("#product-count");
   await expect(count).toHaveText("Products in cart: 3");
+  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
   const countBox = await count.boundingBox();
   const totalBox = await page.locator("#total").boundingBox();
   expect(countBox).not.toBeNull();
