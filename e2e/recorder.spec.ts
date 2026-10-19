@@ -193,7 +193,7 @@ test("reports captured audio on the recorder before Stop is clicked", async ({ p
   const upload = page.waitForResponse("/api/notes");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   expect((await upload).status()).toBe(201);
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-captured")).toMatch(/recorder-captured\.png$/);
 });
 
 test("reports no captured audio when the microphone is refused", async ({ page, context }, testInfo) => {
@@ -223,7 +223,7 @@ test("reports no captured audio when the microphone is refused", async ({ page, 
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
   await expect(status).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
-  expect(await photograph(page, testInfo, "recorder-refused")).toMatch(/recorder-refused\.png$/);
+  expect(await photograph(page, testInfo, "recorder-no-audio")).toMatch(/recorder-no-audio\.png$/);
 });
 
 test("reports a recorder whose start event never fires and re-enables Record", async ({ page, context }, testInfo) => {
@@ -238,7 +238,7 @@ test("reports a recorder whose start event never fires and re-enables Record", a
   await expect(page.getByRole("status")).toHaveText("Recording did not start. Try again.", { timeout: 15_000 });
   await expect(recordButton).toBeEnabled();
   await expect(stopButton).toBeDisabled();
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-start-missing")).toMatch(/recorder-start-missing\.png$/);
 });
 
 test("re-enables Record and shows an error status when the recorder fails to start", async ({ page, context }, testInfo) => {
