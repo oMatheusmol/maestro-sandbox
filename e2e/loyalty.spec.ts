@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { ORDER_PLACED } from "./order-placed.js";
 import { photograph } from "./screens.js";
 
 /** The made-up demo balance every shopper starts with at checkout. */
@@ -72,7 +73,7 @@ test("placing an order shows the points it earned and the reduced balance", asyn
 
   await page.getByRole("button", { name: /Place order and pay/ }).click();
 
-  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
   // One point per whole real of the order total, then the balance less the redemption plus those points.
   const earned = Math.floor(paid / 100);
   await expect(page.locator("#points-earned")).toHaveText(`Points earned on this order: ${earned}`);
@@ -85,7 +86,7 @@ test("keeps the points balance after a page reload once an order is placed", asy
   await page.goto("/");
   await fillShipping(page);
   await page.getByRole("button", { name: /Place order and pay/ }).click();
-  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
   const balance = await page.locator("#points-balance").textContent();
   expect(balance).not.toBe(`Points balance: ${DEMO_POINTS}`);
 
