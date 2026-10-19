@@ -12,6 +12,7 @@ const kilobytes = (bytes: number) => `${Math.ceil(bytes / 1024)} KB`;
 
 record.addEventListener("click", async () => {
   record.disabled = true;
+  status.textContent = "Waiting for microphone permission…";
   let stream: MediaStream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
