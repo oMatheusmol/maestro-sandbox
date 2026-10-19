@@ -12,7 +12,9 @@ const EMPTY_RECORDER = `
     addEventListener(type, listener) {
       (this.listeners[type] ||= []).push(listener);
     }
-    start() {}
+    start() {
+      setTimeout(() => (this.listeners.start || []).forEach((listener) => listener(new Event("start"))), 0);
+    }
     stop() {
       setTimeout(() => {
         (this.listeners.dataavailable || []).forEach((listener) => listener({ data: new Blob([]) }));
@@ -33,7 +35,9 @@ const LIVE_RECORDER = `
     addEventListener(type, listener) {
       (this.listeners[type] ||= []).push(listener);
     }
-    start() {}
+    start() {
+      setTimeout(() => (this.listeners.start || []).forEach((listener) => listener(new Event("start"))), 0);
+    }
     stop() {
       setTimeout(() => {
         const live = this.stream.getTracks().some((track) => track.readyState === "live");
@@ -131,6 +135,33 @@ test("shows a pending microphone status and keeps Record disabled until the requ
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(true));
   await expect(status).toHaveText("Recording…");
   await expect(stopButton).toBeEnabled();
+});
+
+test("enables Stop and shows Recording only once the recorder has started", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
+  // Holds the native start call until the test releases it, so the start event comes after the click.
+  await page.addInitScript(() => {
+    const start = MediaRecorder.prototype.start;
+    MediaRecorder.prototype.start = function (this: MediaRecorder, timeslice?: number) {
+      (window as unknown as Record<string, unknown>).startRecorder = () => start.call(this, timeslice);
+    };
+  });
+  await page.goto("/recorder.html");
+
+  const recordButton = page.getByRole("button", { name: "Record", exact: true });
+  const stopButton = page.getByRole("button", { name: "Stop", exact: true });
+  const status = page.getByRole("status");
+
+  await recordButton.click();
+  await page.waitForFunction(() => "startRecorder" in window);
+  await expect(status).toHaveText("Waiting for microphone permission…");
+  await expect(stopButton).toBeDisabled();
+  await photograph(page, testInfo, "recorder-waiting");
+
+  await page.evaluate(() => (window as unknown as { startRecorder: () => void }).startRecorder());
+  await expect(status).toHaveText("Recording…");
+  await expect(stopButton).toBeEnabled();
+  await photograph(page, testInfo, "recorder-started");
 });
 
 test("shows an error status and re-enables Record when the microphone is refused", async ({ page }, testInfo) => {

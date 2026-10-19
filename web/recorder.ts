@@ -24,10 +24,12 @@ record.addEventListener("click", async () => {
   chunks = [];
   recorder = new MediaRecorder(stream);
   recorder.addEventListener("dataavailable", (event) => chunks.push(event.data));
+  recorder.addEventListener("start", () => {
+    stop.disabled = false;
+    status.textContent = "Recording…";
+  });
   recorder.start();
   startedAt = performance.now();
-  stop.disabled = false;
-  status.textContent = "Recording…";
 });
 
 stop.addEventListener("click", async () => {
