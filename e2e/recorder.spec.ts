@@ -49,6 +49,21 @@ const LIVE_RECORDER = `
   };
 `;
 
+// Replaces MediaRecorder with a recorder whose start() throws, and keeps the stream it was given.
+const THROWING_RECORDER = `
+  window.MediaRecorder = class {
+    constructor(stream) {
+      this.stream = stream;
+      this.mimeType = "audio/webm";
+      window.capturedStream = stream;
+    }
+    addEventListener() {}
+    start() {
+      throw new DOMException("Recorder failed to start", "InvalidStateError");
+    }
+  };
+`;
+
 // Replaces MediaRecorder with a recorder whose start() never dispatches the start event.
 const SILENT_START_RECORDER = `
   window.MediaRecorder = class {
@@ -86,7 +101,7 @@ test("posts the recorded audio, not an empty body", async ({ page, context }, te
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
   await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
-  await page.waitForTimeout(500);
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
 
   const upload = page.waitForResponse("/api/notes");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
@@ -102,7 +117,7 @@ test("uploads the audio captured before the microphone is released", async ({ pa
   await page.goto("/recorder.html");
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
   const upload = page.waitForResponse("/api/notes");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   expect((await upload).status()).toBe(201);
@@ -122,7 +137,7 @@ test("sends nothing for an empty recording", async ({ page, context }, testInfo)
   await page.goto("/recorder.html");
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
   await page.getByRole("button", { name: "Stop", exact: true }).click();
 
   await expect(page.getByRole("status")).toHaveText("Nothing was recorded. Try again.");
@@ -223,5 +238,23 @@ test("reports a recorder whose start event never fires and re-enables Record", a
   await expect(page.getByRole("status")).toHaveText("Recording did not start. Try again.", { timeout: 15_000 });
   await expect(recordButton).toBeEnabled();
   await expect(stopButton).toBeDisabled();
+  await photograph(page, testInfo, "recorder");
+});
+
+test("re-enables Record and shows an error status when the recorder fails to start", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
+  await page.addInitScript(THROWING_RECORDER);
+  await page.goto("/recorder.html");
+
+  await page.getByRole("button", { name: "Record", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Recording could not start. Try again.");
+  await expect(page.getByRole("button", { name: "Record", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeDisabled();
+
+  const trackStates = await page.evaluate(() =>
+    (window as unknown as { capturedStream: MediaStream }).capturedStream.getTracks().map((track) => track.readyState),
+  );
+  expect(trackStates.length).toBeGreaterThan(0);
+  expect(trackStates.every((state) => state === "ended")).toBe(true);
   await photograph(page, testInfo, "recorder");
 });

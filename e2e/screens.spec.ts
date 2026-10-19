@@ -1,11 +1,12 @@
+import { basename } from "node:path";
 import { expect, test, type Locator } from "@playwright/test";
 import { ORDER_PLACED } from "./order-placed.js";
 import { photograph } from "./screens.js";
 
-/** The shop's screens, each photographed in every viewport. */
+/** The shop's screens, each photographed in every viewport. `file` is the literal name the shot is saved as. */
 const SCREENS = [
-  { name: "checkout", path: "/", heading: "Checkout", shot: "checkout-open" },
-  { name: "recorder", path: "/recorder.html", heading: "Voice note", shot: "recorder-screen" },
+  { name: "checkout", path: "/", heading: "Checkout", shot: "checkout-open", file: "checkout-open.png" },
+  { name: "recorder", path: "/recorder.html", heading: "Voice note", shot: "recorder-screen", file: "recorder-screen.png" },
 ];
 
 test("menu uses Arial when navigating between screens", async ({ page }, testInfo) => {
@@ -81,7 +82,7 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
   await page.getByRole("button", { name: "Record", exact: true }).click();
   // The fake microphone can resolve getUserMedia slowly. Stop only enables once recording has started, so the longer limit covers that start.
   await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
-  await page.waitForTimeout(500);
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("Not sent (503). Try again.");
   await expectReadableText(page.locator(".status, .notes li"));
@@ -126,8 +127,7 @@ for (const screen of SCREENS) {
       await expect(total).toBeVisible();
     }
 
-    const shot = screen.shot ?? screen.name;
-    expect(await photograph(page, testInfo, shot)).toMatch(new RegExp(`${shot}\\.png$`));
+    expect(basename(await photograph(page, testInfo, screen.shot))).toBe(screen.file);
   });
 }
 
@@ -163,7 +163,7 @@ test("records a voice note with audio data", async ({ page, context }) => {
   await recordButton.click();
   await expect(page.getByRole("status")).toHaveText("Recording…", { timeout: 15000 });
 
-  await page.waitForTimeout(500);
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
   await stopButton.click();
 
   const noteItem = notesList.locator("li").first();
@@ -187,7 +187,7 @@ test("records a voice note when the microphone is slow to start", async ({ page,
   await recordButton.click();
   await expect(page.getByRole("status")).toHaveText("Recording…", { timeout: 15000 });
 
-  await page.waitForTimeout(500);
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
   await stopButton.click();
 
   const noteItem = notesList.locator("li").first();

@@ -36,6 +36,18 @@ test("keeps the order number in the confirmation after a page reload", async ({ 
   await expect(page.getByLabel("Standard")).toBeDisabled();
 });
 
+test("shows the captured total on the pay button after a restored order", async ({ page }, testInfo) => {
+  await page.goto("/");
+  const saved = { number: "ABCDEFGH", method: "standard", costCents: 0, totalCents: 10000, balanceAfter: 1000 };
+  await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: JSON.stringify(saved) });
+  await page.reload();
+
+  await expect(page.locator("#pay")).toBeDisabled();
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 100,00");
+  await expect(page.locator("#delivery-details")).toContainText("Total: R$ 100,00.");
+  await photograph(page, testInfo, "checkout-restored-total");
+});
+
 test("gives a second order a different number once the first is cleared", async ({ page }) => {
   const first = await placeOrder(page);
 
