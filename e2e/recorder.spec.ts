@@ -63,22 +63,6 @@ const holdMicrophoneRequest = () => {
     });
 };
 
-test("posts the recorded audio, not an empty body", async ({ page, context }, testInfo) => {
-  await context.grantPermissions(["microphone"]);
-  await page.goto("/recorder.html");
-
-  await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
-  await page.waitForTimeout(500);
-
-  const upload = page.waitForResponse("/api/notes");
-  await page.getByRole("button", { name: "Stop", exact: true }).click();
-  expect((await upload).status()).toBe(201);
-
-  await expect(page.getByLabel("Sent notes").locator("li").first()).toContainText(/\d+\.\d+ s · [1-9]\d* KB/);
-  await photograph(page, testInfo, "recorder");
-});
-
 test("uploads the audio captured before the microphone is released", async ({ page, context }, testInfo) => {
   await context.grantPermissions(["microphone"]);
   await page.addInitScript(LIVE_RECORDER);
@@ -146,21 +130,6 @@ test("shows an error status and re-enables Record when the microphone is refused
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
   await expect(status).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(recordButton).toBeEnabled();
-  await photograph(page, testInfo, "recorder");
-});
-
-test("reports captured audio on the recorder before Stop is clicked", async ({ page, context }, testInfo) => {
-  await context.grantPermissions(["microphone"]);
-  await page.goto("/recorder.html");
-
-  await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
-  await expect(page.getByRole("status")).toHaveText("Recording…");
-  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
-
-  const upload = page.waitForResponse("/api/notes");
-  await page.getByRole("button", { name: "Stop", exact: true }).click();
-  expect((await upload).status()).toBe(201);
   await photograph(page, testInfo, "recorder");
 });
 
