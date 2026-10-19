@@ -65,6 +65,11 @@ const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
 const couponError = document.querySelector<HTMLParagraphElement>("#coupon-error")!;
 const discountLine = document.querySelector<HTMLParagraphElement>("#discount")!;
+const expiryLine = document.createElement("p");
+expiryLine.id = "coupon-expiry";
+expiryLine.className = "discount";
+expiryLine.hidden = true;
+discountLine.after(expiryLine);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
@@ -176,6 +181,8 @@ function applyDiscount(coupon: Coupon): void {
       ? `Coupon ${coupon.code}: free shipping`
       : `Coupon ${coupon.code}: -${discount.toBRL()}`;
   discountLine.hidden = false;
+  expiryLine.textContent = `Expires ${coupon.expiresAt.toISOString().slice(0, 10)}`;
+  expiryLine.hidden = false;
   render();
 }
 

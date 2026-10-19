@@ -14,6 +14,26 @@ test("applies a percentage coupon to the total and the pay button", async ({ pag
   await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.015,83");
 });
 
+test("shows the expiry date of the applied coupon", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByLabel("Coupon code").fill("WELCOME10");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await expect(page.locator("#coupon-expiry")).toBeVisible();
+  await expect(page.locator("#coupon-expiry")).toHaveText("Expires 2099-12-31");
+});
+
+test("hides the expiry date when the coupon is refused", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByLabel("Coupon code").fill("OLD5");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await expect(page.getByRole("alert")).toHaveText("coupon OLD5 expired on 2020-01-01T00:00:00.000Z");
+  await expect(page.locator("#coupon-expiry")).toBeHidden();
+});
+
 test("refuses an expired coupon and leaves the total unchanged", async ({ page }) => {
   await page.goto("/");
 
