@@ -53,6 +53,12 @@ pnpm test:ui
 
 This runs every test on a phone viewport (375×812) and a desktop viewport (1280×800).
 
+To run only some spec files, pass their paths; each one still runs on both viewports:
+
+```bash
+pnpm test:ui e2e/coupon.spec.ts
+```
+
 ## Triggering Sentry scenarios
 
 To send one of the Sentry error scenarios to your Sentry project, use:

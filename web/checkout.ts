@@ -1,4 +1,4 @@
-import { cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
+import { cartQuantity, cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
 import { type Coupon, discountFor } from "../src/coupon.js";
 import { pointsCoupon, pointsEarned } from "../src/loyalty.js";
 import { Money } from "../src/money.js";
@@ -68,10 +68,14 @@ const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
 const couponError = document.querySelector<HTMLParagraphElement>("#coupon-error")!;
 const discountLine = document.querySelector<HTMLParagraphElement>("#discount")!;
+const expiryLine = document.createElement("p");
+expiryLine.id = "coupon-expiry";
+expiryLine.className = "discount";
+expiryLine.hidden = true;
+discountLine.after(expiryLine);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
-const orderNumberLine = document.querySelector<HTMLParagraphElement>("#order-number")!;
 
 for (const { name, line } of CART) {
   const item = document.createElement("li");
@@ -87,6 +91,11 @@ for (const { name, line } of CART) {
 const cart = CART.map((c) => c.line);
 const subtotal = cartTotal(cart);
 const weightKg = cartWeight(cart);
+const quantity = cartQuantity(cart);
+const itemCount = document.createElement("p");
+itemCount.className = "item-count";
+itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+total.after(itemCount);
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
@@ -179,6 +188,8 @@ function applyDiscount(coupon: Coupon): void {
       ? `Coupon ${coupon.code}: free shipping`
       : `Coupon ${coupon.code}: -${discount.toBRL()}`;
   discountLine.hidden = false;
+  expiryLine.textContent = `Expires ${coupon.expiresAt.toISOString().slice(0, 10)}`;
+  expiryLine.hidden = false;
   render();
 }
 
@@ -207,13 +218,11 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
   return saved as SavedOrder;
 }
 
-/** Shows a placed order: its number and delivery details, and locks the controls so the captured order stays as it was. */
+/** Shows a placed order: its number in the confirmation and its delivery details, and locks the controls so the captured order stays as it was. */
 function showPlaced(saved: SavedOrder): void {
   pay.disabled = true;
   lockAfterCapture();
-  placed.textContent = "Order placed. You will get an email with the tracking code.";
-  orderNumberLine.textContent = `Order number: ${saved.number}`;
-  orderNumberLine.hidden = false;
+  placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
   pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
   pointsEarnedLine.hidden = false;
   const date = saved.deliveryDate ? ` for ${saved.deliveryDate}` : "";
