@@ -15,7 +15,7 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     browserName: "chromium",
-    // Keep a trace and a screenshot of the page only for tests that fail.
+    // Keep a trace and a screenshot of each failing test, for the run's artifacts.
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     launchOptions: {
