@@ -23,7 +23,7 @@ test("menu uses Arial when navigating between screens", async ({ page }, testInf
   await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
   await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
   await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-menu")).toMatch(/recorder-menu\.png$/);
 
   await checkout.click();
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
@@ -78,12 +78,13 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expectReadableText(page.locator("h1, .page > p, .status"));
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  // The fake microphone can resolve getUserMedia slowly. Stop only enables once recording has started, so the longer limit covers that start.
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
   await page.waitForTimeout(500);
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("Not sent (503). Try again.");
   await expectReadableText(page.locator(".status, .notes li"));
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-error")).toMatch(/recorder-error\.png$/);
 });
 
 test("keeps the shared page background dark green across navigation", async ({ page }, testInfo) => {
@@ -95,7 +96,7 @@ test("keeps the shared page background dark green across navigation", async ({ p
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Voice note", exact: true })).toBeVisible();
   await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-background")).toMatch(/recorder-background\.png$/);
 
   await page.getByRole("link", { name: "Checkout", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
@@ -158,7 +159,31 @@ test("records a voice note with audio data", async ({ page, context }) => {
   const notesList = page.getByLabel("Sent notes");
 
   await recordButton.click();
-  await expect(stopButton).toBeEnabled();
+  await expect(page.getByRole("status")).toHaveText("Recording…", { timeout: 15000 });
+
+  await page.waitForTimeout(500);
+  await stopButton.click();
+
+  const noteItem = notesList.locator("li").first();
+  await expect(noteItem).toContainText(/\d+\.\d+ s · [1-9]\d* KB/);
+});
+
+test("records a voice note when the microphone is slow to start", async ({ page, context }) => {
+  await context.grantPermissions(["microphone"]);
+  // Delays the microphone grant past Playwright's default 5-second expect timeout.
+  await page.addInitScript(() => {
+    const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = (constraints?: MediaStreamConstraints) =>
+      new Promise((resolve) => setTimeout(() => resolve(getUserMedia(constraints)), 6000));
+  });
+  await page.goto("/recorder.html");
+
+  const recordButton = page.getByRole("button", { name: "Record" });
+  const stopButton = page.getByRole("button", { name: "Stop" });
+  const notesList = page.getByLabel("Sent notes");
+
+  await recordButton.click();
+  await expect(page.getByRole("status")).toHaveText("Recording…", { timeout: 15000 });
 
   await page.waitForTimeout(500);
   await stopButton.click();

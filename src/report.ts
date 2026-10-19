@@ -4,6 +4,7 @@ import { Money } from "./money.js";
 import { isCalendarDate, type ShippingMethod } from "./shipping.js";
 
 export interface Order {
+  /** The order number, generated once at checkout and kept with the order. */
   id: string;
   lines: CartLine[];
   /** Coupon discount taken off the order's lines; none when absent. */
