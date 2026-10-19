@@ -15,6 +15,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     browserName: "chromium",
+    // Keep a trace and a screenshot of the page only for tests that fail.
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
     launchOptions: {
       // A fake microphone and camera, the microphone playing the tone, and no permission prompt.
       args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${TONE}`],
