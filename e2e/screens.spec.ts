@@ -78,8 +78,7 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expectReadableText(page.locator("h1, .page > p, .status"));
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
-  await page.waitForTimeout(500);
+  await expect(page.getByRole("status")).toHaveText("Recording…");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("Not sent (503). Try again.");
   await expectReadableText(page.locator(".status, .notes li"));
@@ -158,9 +157,7 @@ test("records a voice note with audio data", async ({ page, context }) => {
   const notesList = page.getByLabel("Sent notes");
 
   await recordButton.click();
-  await expect(stopButton).toBeEnabled();
-
-  await page.waitForTimeout(500);
+  await expect(page.getByRole("status")).toHaveText("Recording…");
   await stopButton.click();
 
   const noteItem = notesList.locator("li").first();
