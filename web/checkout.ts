@@ -30,7 +30,7 @@ const COUPONS: Coupon[] = [
   { code: "OLD5", kind: "fixed", amount: Money.fromBRL("5,00"), expiresAt: new Date("2020-01-01T00:00:00Z") },
 ];
 
-/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance resets on reload while the placed order is kept in this browser. */
+/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance starts at DEMO_POINTS and, once an order is placed, is kept in this browser with that order. */
 const DEMO_USER_ID = "demo-user";
 const DEMO_POINTS = 1000;
 const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
@@ -38,13 +38,14 @@ const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
 /** Where this browser keeps the placed order, so a reload shows it again with the same order number. */
 const ORDER_KEY = "sandbox-shop:placed-order";
 
-/** The captured fields of a placed order, as kept under ORDER_KEY. */
+/** The captured fields of a placed order, and the points balance after it, as kept under ORDER_KEY. */
 interface SavedOrder {
   number: string;
   method: ShippingMethod;
   deliveryDate?: string;
   costCents: number;
   totalCents: number;
+  balanceAfter: number;
 }
 
 const METHODS: ShippingMethod[] = ["standard", "express", "scheduled"];
@@ -192,7 +193,10 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !METHODS.some((option) => option === saved.method) ||
     (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
     !Number.isInteger(saved.costCents) ||
-    !Number.isInteger(saved.totalCents)
+    !Number.isInteger(saved.totalCents) ||
+    typeof saved?.balanceAfter !== "number" ||
+    !Number.isInteger(saved.balanceAfter) ||
+    saved.balanceAfter < 0
   ) {
     return undefined;
   }
@@ -220,6 +224,8 @@ if (restored) {
   method = restored.method;
   dateInput.value = restored.deliveryDate ?? "";
   document.querySelector<HTMLInputElement>(`input[name="method"][value="${method}"]`)!.checked = true;
+  balance = restored.balanceAfter;
+  renderPoints();
   render();
   showPlaced(restored);
 }
@@ -286,6 +292,7 @@ form.addEventListener("submit", (event) => {
     deliveryDate: delivery.deliveryDate,
     costCents: delivery.cost.cents,
     totalCents: orderTotal(order).cents,
+    balanceAfter: balance,
   };
   localStorage.setItem(ORDER_KEY, JSON.stringify(saved));
   showPlaced(saved);

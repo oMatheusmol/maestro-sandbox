@@ -55,3 +55,19 @@ test("starts a fresh checkout when the saved order is malformed", async ({ page 
     await expect(page.locator("#pay")).toBeEnabled();
   }
 });
+
+test("starts a fresh checkout when the saved order has no valid points balance", async ({ page }) => {
+  await page.goto("/");
+  const order = { number: "ABCDEFGH", method: "standard", costCents: 0, totalCents: 0 };
+
+  for (const balanceAfter of [undefined, -1, 1.5]) {
+    const saved = JSON.stringify({ ...order, balanceAfter });
+    await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: saved });
+    await page.reload();
+
+    await expect(page.locator("#placed")).toBeEmpty();
+    await expect(page.locator("#order-number")).toBeHidden();
+    await expect(page.locator("#points-balance")).toHaveText("Points balance: 1000");
+    await expect(page.locator("#pay")).toBeEnabled();
+  }
+});

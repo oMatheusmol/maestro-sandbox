@@ -80,3 +80,17 @@ test("placing an order shows the points it earned and the reduced balance", asyn
   await expect(page.getByRole("button", { name: "Redeem points", exact: true })).toBeDisabled();
   await photograph(page, testInfo, "checkout-points-earned");
 });
+
+test("keeps the points balance after a page reload once an order is placed", async ({ page }) => {
+  await page.goto("/");
+  await fillShipping(page);
+  await page.getByRole("button", { name: /Place order and pay/ }).click();
+  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  const balance = await page.locator("#points-balance").textContent();
+  expect(balance).not.toBe(`Points balance: ${DEMO_POINTS}`);
+
+  await page.reload();
+
+  await expect(page.locator("#points-balance")).toHaveText(balance!);
+  await expect(page.getByRole("button", { name: "Redeem points", exact: true })).toBeDisabled();
+});
