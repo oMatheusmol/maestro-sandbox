@@ -8,6 +8,8 @@ let recorder: MediaRecorder | null = null;
 let chunks: Blob[] = [];
 let startedAt = 0;
 
+const START_TIMEOUT_MS = 5000;
+
 /** A note's size as the list shows it, in whole kilobytes. */
 const kilobytes = (bytes: number) => `${Math.ceil(bytes / 1024)} KB`;
 
@@ -24,16 +26,37 @@ record.addEventListener("click", async () => {
     return;
   }
   chunks = [];
-  recorder = new MediaRecorder(stream);
-  recorder.addEventListener("dataavailable", (event) => {
+  const startingRecorder = new MediaRecorder(stream);
+  recorder = startingRecorder;
+  startingRecorder.addEventListener("dataavailable", (event) => {
     chunks.push(event.data);
     recorderSection.dataset.capturedBytes = String(chunks.reduce((total, chunk) => total + chunk.size, 0));
   });
+  // If the recorder never reports its start, release the microphone and let the person try again.
+  const startTimer = setTimeout(() => {
+    startingRecorder.stream.getTracks().forEach((track) => track.stop());
+    recorder = null;
+    record.disabled = false;
+    status.textContent = "Recording did not start. Try again.";
+  }, START_TIMEOUT_MS);
+  startingRecorder.addEventListener("start", () => {
+    // A start that arrives after the timeout, or for a newer recording, is ignored.
+    if (recorder !== startingRecorder) return;
+    clearTimeout(startTimer);
+    startedAt = performance.now();
+    stop.disabled = false;
+    status.textContent = "Recording…";
+  });
   // Chunks arrive every 100 ms, so the captured audio is reported while recording, before Stop.
-  recorder.start(100);
-  startedAt = performance.now();
-  stop.disabled = false;
-  status.textContent = "Recording…";
+  try {
+    startingRecorder.start(100);
+  } catch {
+    clearTimeout(startTimer);
+    stream.getTracks().forEach((track) => track.stop());
+    recorder = null;
+    record.disabled = false;
+    status.textContent = "Recording could not start. Try again.";
+  }
 });
 
 stop.addEventListener("click", async () => {
