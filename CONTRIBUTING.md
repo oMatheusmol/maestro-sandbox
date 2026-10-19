@@ -53,6 +53,12 @@ pnpm test:ui
 
 This runs every test on a phone viewport (375×812) and a desktop viewport (1280×800).
 
+To run only some spec files, pass their paths after the script name:
+
+```bash
+pnpm test:ui e2e/health.spec.ts
+```
+
 ## Triggering Sentry scenarios
 
 To send one of the Sentry error scenarios to your Sentry project, use:
