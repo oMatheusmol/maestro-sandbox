@@ -84,6 +84,10 @@ for (const { name, line } of CART) {
 const cart = CART.map((c) => c.line);
 const subtotal = cartTotal(cart);
 const weightKg = cartWeight(cart);
+const productCount = document.createElement("p");
+productCount.id = "product-count";
+productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
+total.before(productCount);
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
