@@ -70,6 +70,25 @@ describe("reconcile", () => {
     );
   });
 
+  it("matches a legacy UUID-shaped order id, kept as stored, at its stored total", () => {
+    const legacyId = "3f2b9c4e-1d7a-4b8e-9f60-2c5a7d1e8b43";
+    const orders = [
+      { id: legacyId, lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
+    ];
+    expect(() => reconcile(orders, { orderIds: [legacyId], paidOut: money("10,00") })).not.toThrow();
+    expect(() => reconcile(orders, { orderIds: [legacyId], paidOut: money("10,01") })).toThrow(
+      /^reconciliation mismatch: expected R\$ 10,00, paid out R\$ 10,01$/,
+    );
+  });
+
+  it("names a settlement key matching neither a stored order id nor the order number format", () => {
+    const orders = [
+      { id: "3F7K2M9Q", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },
+    ];
+    const settlement = { orderIds: ["3F7K2M9Q", "ab12"], paidOut: money("20,00") };
+    expect(() => reconcile(orders, settlement)).toThrow(/^settlement names unknown orders: ab12$/);
+  });
+
   it("throws naming an id the settlement repeats", () => {
     const orders = [
       { id: "o1", lines: [{ productCode: "A", unitPrice: money("10,00"), quantity: 1 }] },

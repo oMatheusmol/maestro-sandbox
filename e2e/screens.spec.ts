@@ -1,5 +1,6 @@
 import { basename } from "node:path";
 import { expect, test, type Locator } from "@playwright/test";
+import { ORDER_PLACED } from "./order-placed.js";
 import { photograph } from "./screens.js";
 
 /** The shop's screens, each photographed in every viewport. `file` is the literal name the shot is saved as. */
@@ -70,7 +71,7 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
   await page.getByLabel("CEP", { exact: true }).fill("12345-678");
   await expectReadableText(page.locator(".shipping input"));
   await page.getByRole("button", { name: /Place order and pay/ }).click();
-  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
   await expectReadableText(page.getByRole("status"));
   expect(await photograph(page, testInfo, "checkout-order-placed")).toMatch(/checkout-order-placed\.png$/);
 
