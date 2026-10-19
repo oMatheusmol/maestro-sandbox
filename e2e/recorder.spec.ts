@@ -76,7 +76,7 @@ test("posts the recorded audio, not an empty body", async ({ page, context }, te
   expect((await upload).status()).toBe(201);
 
   await expect(page.getByLabel("Sent notes").locator("li").first()).toContainText(/\d+\.\d+ s · [1-9]\d* KB/);
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-posted")).toMatch(/recorder-posted\.png$/);
 });
 
 test("uploads the audio captured before the microphone is released", async ({ page, context }, testInfo) => {
@@ -91,7 +91,7 @@ test("uploads the audio captured before the microphone is released", async ({ pa
   expect((await upload).status()).toBe(201);
 
   await expect(page.getByLabel("Sent notes").locator("li").first()).toContainText(/\d+\.\d+ s · [1-9]\d* KB/);
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-released")).toMatch(/recorder-released\.png$/);
 });
 
 test("sends nothing for an empty recording", async ({ page, context }, testInfo) => {
@@ -112,7 +112,7 @@ test("sends nothing for an empty recording", async ({ page, context }, testInfo)
   await expect(page.getByRole("button", { name: "Record", exact: true })).toBeEnabled();
   await expect(page.getByLabel("Sent notes").locator("li")).toHaveCount(0);
   expect(uploads).toBe(0);
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-empty")).toMatch(/recorder-empty\.png$/);
 });
 
 test("shows a pending microphone status and keeps Record disabled until the request resolves", async ({ page }, testInfo) => {
@@ -126,7 +126,7 @@ test("shows a pending microphone status and keeps Record disabled until the requ
   await recordButton.click();
   await expect(status).toHaveText("Waiting for microphone permission…");
   await expect(recordButton).toBeDisabled();
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-pending")).toMatch(/recorder-pending\.png$/);
 
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(true));
   await expect(status).toHaveText("Recording…");
@@ -146,7 +146,7 @@ test("shows an error status and re-enables Record when the microphone is refused
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
   await expect(status).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(recordButton).toBeEnabled();
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-refused")).toMatch(/recorder-refused\.png$/);
 });
 
 test("reports captured audio on the recorder before Stop is clicked", async ({ page, context }, testInfo) => {
