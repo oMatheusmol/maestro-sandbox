@@ -41,14 +41,17 @@ const ORDER_KEY = "sandbox-shop:placed-order";
 /** Where this browser keeps an unplaced discount, so a reload applies it again. */
 const DISCOUNT_KEY = "sandbox-shop:pending-discount";
 
-/** The captured fields of a placed order, the points balance after it, and the discount line it showed, as kept under ORDER_KEY. */
+/**
+ * The captured fields of a placed order, the points balance after it, and the discount line it showed, as kept under ORDER_KEY.
+ * Records saved before the balance was kept have no balanceAfter; they restore with the demo balance.
+ */
 interface SavedOrder {
   number: string;
   method: ShippingMethod;
   deliveryDate?: string;
   costCents: number;
   totalCents: number;
-  balanceAfter: number;
+  balanceAfter?: number;
   discountLabel?: string;
 }
 
@@ -215,10 +218,11 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !METHODS.some((option) => option === saved.method) ||
     (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
     !Number.isInteger(saved.costCents) ||
+    saved.totalCents === undefined ||
     !Number.isInteger(saved.totalCents) ||
-    typeof saved?.balanceAfter !== "number" ||
-    !Number.isInteger(saved.balanceAfter) ||
-    saved.balanceAfter < 0 ||
+    saved.totalCents < 0 ||
+    (saved.balanceAfter !== undefined &&
+      (typeof saved.balanceAfter !== "number" || !Number.isInteger(saved.balanceAfter) || saved.balanceAfter < 0)) ||
     (saved.discountLabel !== undefined && typeof saved.discountLabel !== "string")
   ) {
     return undefined;
@@ -249,6 +253,8 @@ function showPlaced(saved: SavedOrder): void {
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
+  pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
+  pointsEarnedLine.hidden = false;
   if (saved.discountLabel) {
     discountLine.textContent = saved.discountLabel;
     discountLine.hidden = false;
@@ -286,7 +292,7 @@ if (restored) {
   method = restored.method;
   dateInput.value = restored.deliveryDate ?? "";
   document.querySelector<HTMLInputElement>(`input[name="method"][value="${method}"]`)!.checked = true;
-  balance = restored.balanceAfter;
+  balance = restored.balanceAfter ?? DEMO_POINTS;
   renderPoints();
   render();
   showPlaced(restored);
@@ -355,8 +361,6 @@ form.addEventListener("submit", (event) => {
   const earned = pointsEarned(orderTotal(order));
   balance = balance - pointsSpent + earned;
   renderPoints();
-  pointsEarnedLine.textContent = `Points earned on this order: ${earned}`;
-  pointsEarnedLine.hidden = false;
   const saved: SavedOrder = {
     number,
     method: delivery.method,
