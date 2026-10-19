@@ -206,6 +206,7 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
 /** Shows a placed order: its number and delivery details, and locks the controls so the captured order stays as it was. */
 function showPlaced(saved: SavedOrder): void {
   pay.disabled = true;
+  pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = "Order placed. You will get an email with the tracking code.";
   orderNumberLine.textContent = `Order number: ${saved.number}`;
