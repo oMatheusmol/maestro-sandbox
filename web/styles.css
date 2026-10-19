@@ -95,6 +95,17 @@ h2 {
   white-space: nowrap;
 }
 
+.amounts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.unit-price {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .shipping,
 .coupon {
   display: grid;
