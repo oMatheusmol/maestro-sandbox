@@ -250,5 +250,5 @@ test("fits the delivery controls and pay button in the viewport, with actions af
   expect(couponBox.y).toBeGreaterThanOrEqual(shippingBox.y + shippingBox.height);
   expect(actionsBox.y).toBeGreaterThanOrEqual(couponBox.y + couponBox.height);
 
-  await photograph(page, testInfo, "checkout");
+  expect(await photograph(page, testInfo, "checkout-shipping")).toMatch(/checkout-shipping\.png$/);
 });
