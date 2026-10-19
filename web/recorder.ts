@@ -30,7 +30,15 @@ record.addEventListener("click", async () => {
     recorderSection.dataset.capturedBytes = String(chunks.reduce((total, chunk) => total + chunk.size, 0));
   });
   // Chunks arrive every 100 ms, so the captured audio is reported while recording, before Stop.
-  recorder.start(100);
+  try {
+    recorder.start(100);
+  } catch {
+    stream.getTracks().forEach((track) => track.stop());
+    recorder = null;
+    record.disabled = false;
+    status.textContent = "Recording could not start. Try again.";
+    return;
+  }
   startedAt = performance.now();
   stop.disabled = false;
   status.textContent = "Recording…";

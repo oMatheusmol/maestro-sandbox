@@ -45,6 +45,21 @@ const LIVE_RECORDER = `
   };
 `;
 
+// Replaces MediaRecorder with a recorder whose start() throws, and keeps the stream it was given.
+const THROWING_RECORDER = `
+  window.MediaRecorder = class {
+    constructor(stream) {
+      this.stream = stream;
+      this.mimeType = "audio/webm";
+      window.capturedStream = stream;
+    }
+    addEventListener() {}
+    start() {
+      throw new DOMException("Recorder failed to start", "InvalidStateError");
+    }
+  };
+`;
+
 /**
  * Holds the microphone request open until the test settles it, so the pending
  * state can be seen. Granting runs the real getUserMedia; refusing rejects like a denied prompt.
@@ -174,5 +189,23 @@ test("reports no captured audio when the microphone is refused", async ({ page }
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
   await expect(page.getByRole("status")).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
+  await photograph(page, testInfo, "recorder");
+});
+
+test("re-enables Record and shows an error status when the recorder fails to start", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
+  await page.addInitScript(THROWING_RECORDER);
+  await page.goto("/recorder.html");
+
+  await page.getByRole("button", { name: "Record", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Recording could not start. Try again.");
+  await expect(page.getByRole("button", { name: "Record", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeDisabled();
+
+  const trackStates = await page.evaluate(() =>
+    (window as unknown as { capturedStream: MediaStream }).capturedStream.getTracks().map((track) => track.readyState),
+  );
+  expect(trackStates.length).toBeGreaterThan(0);
+  expect(trackStates.every((state) => state === "ended")).toBe(true);
   await photograph(page, testInfo, "recorder");
 });
