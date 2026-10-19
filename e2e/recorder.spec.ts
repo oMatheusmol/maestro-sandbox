@@ -164,15 +164,32 @@ test("reports captured audio on the recorder before Stop is clicked", async ({ p
   await photograph(page, testInfo, "recorder");
 });
 
-test("reports no captured audio when the microphone is refused", async ({ page }, testInfo) => {
+test("reports no captured audio when the microphone is refused", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
   await page.addInitScript(holdMicrophoneRequest);
   await page.goto("/recorder.html");
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
 
-  await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("status")).toHaveText("Waiting for microphone permission…");
+  const recordButton = page.getByRole("button", { name: "Record", exact: true });
+  const status = page.getByRole("status");
+
+  await recordButton.click();
+  await expect(status).toHaveText("Waiting for microphone permission…");
+  await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(true));
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
+
+  const upload = page.waitForResponse("/api/notes");
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  expect((await upload).status()).toBe(201);
+  await expect(recordButton).toBeEnabled();
+
+  await recordButton.click();
+  await expect(status).toHaveText("Waiting for microphone permission…");
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
 
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
-  await expect(page.getByRole("status")).toHaveText("The microphone is not available. Allow it in the browser and try again.");
+  await expect(status).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
   await photograph(page, testInfo, "recorder");
 });
