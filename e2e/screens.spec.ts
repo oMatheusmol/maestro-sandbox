@@ -163,3 +163,24 @@ test("records a voice note with audio data", async ({ page, context }) => {
   const noteItem = notesList.locator("li").first();
   await expect(noteItem).toContainText(/\d+\.\d+ s · [1-9]\d* KB/);
 });
+
+test("enables Stop only once the recorder has started", async ({ page, context }) => {
+  await context.grantPermissions(["microphone"]);
+  // Hold back the native start call until the test releases it, so the start event comes later than the click.
+  await page.addInitScript(() => {
+    const start = MediaRecorder.prototype.start;
+    MediaRecorder.prototype.start = function (this: MediaRecorder, timeslice?: number) {
+      Object.assign(window, { startRecording: () => start.call(this, timeslice) });
+    };
+  });
+  await page.goto("/recorder.html");
+
+  await page.getByRole("button", { name: "Record", exact: true }).click();
+  await page.waitForFunction(() => "startRecording" in window);
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeDisabled();
+  await expect(page.getByRole("status")).not.toHaveText("Recording…");
+
+  await page.evaluate(() => (window as unknown as { startRecording: () => void }).startRecording());
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(page.getByRole("status")).toHaveText("Recording…");
+});
