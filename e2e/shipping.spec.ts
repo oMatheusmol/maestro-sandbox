@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { ORDER_PLACED } from "./order-placed.js";
 import { photograph } from "./screens.js";
 
 /** A frozen browser clock, so today, tomorrow and past dates are the same in every run. */
@@ -122,7 +123,7 @@ test("switching away from scheduled drops the date requirement and the date", as
 
   await fillShipping(page);
   await pay(page).click();
-  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
   await expect(page.locator("#delivery-details")).toHaveText("Delivery: Standard. Shipping: R$ 0,00. Total: R$ 1.128,70.");
 });
 
@@ -133,7 +134,7 @@ test("captures a scheduled order with its date, fee and total, then locks paymen
   await fillShipping(page);
   await pay(page).click();
 
-  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
   await expect(page.locator("#delivery-details")).toHaveText(
     "Delivery: Scheduled for 2026-10-20. Shipping: R$ 5,00. Total: R$ 1.133,70.",
   );

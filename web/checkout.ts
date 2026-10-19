@@ -223,7 +223,7 @@ form.addEventListener("submit", (event) => {
   pointsEarnedLine.hidden = false;
   pay.disabled = true;
   lockAfterCapture();
-  placed.textContent = "Order placed. You will get an email with the tracking code.";
+  placed.textContent = `Order placed: ${order.id}. You will get an email with the tracking code.`;
   const date = delivery.deliveryDate ? ` for ${delivery.deliveryDate}` : "";
   deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[delivery.method]}${date}. Shipping: ${delivery.cost.toBRL()}. Total: ${orderTotal(order).toBRL()}.`;
   deliveryDetails.hidden = false;
