@@ -38,14 +38,17 @@ const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
 /** Where this browser keeps the placed order, so a reload shows it again with the same order number. */
 const ORDER_KEY = "sandbox-shop:placed-order";
 
-/** The captured fields of a placed order, and the points balance after it, as kept under ORDER_KEY. */
+/**
+ * The captured fields of a placed order, and the points balance after it, as kept under ORDER_KEY.
+ * Records saved before the balance was kept have no balanceAfter; they restore with the demo balance.
+ */
 interface SavedOrder {
   number: string;
   method: ShippingMethod;
   deliveryDate?: string;
   costCents: number;
   totalCents: number;
-  balanceAfter: number;
+  balanceAfter?: number;
 }
 
 const METHODS: ShippingMethod[] = ["standard", "express", "scheduled"];
@@ -193,10 +196,11 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !METHODS.some((option) => option === saved.method) ||
     (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
     !Number.isInteger(saved.costCents) ||
+    saved.totalCents === undefined ||
     !Number.isInteger(saved.totalCents) ||
-    typeof saved?.balanceAfter !== "number" ||
-    !Number.isInteger(saved.balanceAfter) ||
-    saved.balanceAfter < 0
+    saved.totalCents < 0 ||
+    (saved.balanceAfter !== undefined &&
+      (typeof saved.balanceAfter !== "number" || !Number.isInteger(saved.balanceAfter) || saved.balanceAfter < 0))
   ) {
     return undefined;
   }
@@ -210,6 +214,8 @@ function showPlaced(saved: SavedOrder): void {
   placed.textContent = "Order placed. You will get an email with the tracking code.";
   orderNumberLine.textContent = `Order number: ${saved.number}`;
   orderNumberLine.hidden = false;
+  pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
+  pointsEarnedLine.hidden = false;
   const date = saved.deliveryDate ? ` for ${saved.deliveryDate}` : "";
   deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[saved.method]}${date}. Shipping: ${new Money(saved.costCents).toBRL()}. Total: ${new Money(saved.totalCents).toBRL()}.`;
   deliveryDetails.hidden = false;
@@ -224,7 +230,7 @@ if (restored) {
   method = restored.method;
   dateInput.value = restored.deliveryDate ?? "";
   document.querySelector<HTMLInputElement>(`input[name="method"][value="${method}"]`)!.checked = true;
-  balance = restored.balanceAfter;
+  balance = restored.balanceAfter ?? DEMO_POINTS;
   renderPoints();
   render();
   showPlaced(restored);
@@ -284,8 +290,6 @@ form.addEventListener("submit", (event) => {
   const earned = pointsEarned(orderTotal(order));
   balance = balance - pointsSpent + earned;
   renderPoints();
-  pointsEarnedLine.textContent = `Points earned on this order: ${earned}`;
-  pointsEarnedLine.hidden = false;
   const saved: SavedOrder = {
     number,
     method: delivery.method,

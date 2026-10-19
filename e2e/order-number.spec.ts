@@ -60,7 +60,7 @@ test("starts a fresh checkout when the saved order has no valid points balance",
   await page.goto("/");
   const order = { number: "ABCDEFGH", method: "standard", costCents: 0, totalCents: 0 };
 
-  for (const balanceAfter of [undefined, -1, 1.5]) {
+  for (const balanceAfter of [-1, 1.5, "1000"]) {
     const saved = JSON.stringify({ ...order, balanceAfter });
     await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: saved });
     await page.reload();
@@ -70,4 +70,37 @@ test("starts a fresh checkout when the saved order has no valid points balance",
     await expect(page.locator("#points-balance")).toHaveText("Points balance: 1000");
     await expect(page.locator("#pay")).toBeEnabled();
   }
+});
+
+test("restores an order saved without a points balance: number, placed state and balance after a reload", async ({ page }, testInfo) => {
+  await page.goto("/");
+  const saved = { number: "ABCDEFGH", method: "standard", costCents: 1000, totalCents: 10000 };
+  await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: JSON.stringify(saved) });
+  await page.reload();
+
+  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  await expect(page.locator("#order-number")).toHaveText("Order number: ABCDEFGH");
+  await expect(page.locator("#pay")).toBeDisabled();
+  await expect(page.locator("#points-balance")).toHaveText("Points balance: 1000");
+  await photograph(page, testInfo, "checkout-restored-order");
+});
+
+test("shows the points earned line after a reload of a saved order", async ({ page }) => {
+  await page.goto("/");
+  const saved = { number: "ABCDEFGH", method: "standard", costCents: 0, totalCents: 10000, balanceAfter: 1100 };
+  await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: JSON.stringify(saved) });
+  await page.reload();
+
+  await expect(page.locator("#points-earned")).toHaveText("Points earned on this order: 100");
+});
+
+test("starts a fresh checkout when the saved order has a negative total", async ({ page }) => {
+  await page.goto("/");
+  const saved = { number: "ABCDEFGH", method: "standard", costCents: 0, totalCents: -1, balanceAfter: 0 };
+  await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: JSON.stringify(saved) });
+  await page.reload();
+
+  await expect(page.locator("#placed")).toBeEmpty();
+  await expect(page.locator("#order-number")).toBeHidden();
+  await expect(page.locator("#pay")).toBeEnabled();
 });
