@@ -38,7 +38,14 @@ stop.addEventListener("click", async () => {
   recorder = null;
 
   recordedRecorder.addEventListener("stop", async () => {
+    // Stopping the tracks here, after the last chunk arrives, keeps the final audio in the note.
+    recordedRecorder.stream.getTracks().forEach((track) => track.stop());
     const note = new Blob(chunks, { type: recordedRecorder.mimeType });
+    if (note.size === 0) {
+      status.textContent = "Nothing was recorded. Try again.";
+      record.disabled = false;
+      return;
+    }
     status.textContent = "Sending…";
     try {
       const response = await fetch("/api/notes", { method: "POST", headers: { "content-type": note.type || "application/octet-stream" }, body: note });
@@ -53,5 +60,4 @@ stop.addEventListener("click", async () => {
   });
 
   recordedRecorder.stop();
-  recordedRecorder.stream.getTracks().forEach((track) => track.stop());
 });
