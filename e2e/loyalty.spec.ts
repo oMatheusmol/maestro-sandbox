@@ -4,6 +4,9 @@ import { photograph } from "./screens.js";
 /** The made-up demo balance every shopper starts with at checkout. */
 const DEMO_POINTS = 1000;
 
+/** The browser key the checkout keeps the placed order and its balance under. */
+const ORDER_KEY = "sandbox-shop:placed-order";
+
 /** The digits of a BRL amount as cents: "Total do pedido: R$ 1.118,70" reads as 111870. */
 function centsIn(text: string | null): number {
   return Number((text ?? "").replace(/\D/g, ""));
@@ -79,4 +82,42 @@ test("placing an order shows the points it earned and the reduced balance", asyn
   await expect(page.locator("#points-balance")).toHaveText(`Points balance: ${DEMO_POINTS - redeemed + earned}`);
   await expect(page.getByRole("button", { name: "Redeem points", exact: true })).toBeDisabled();
   await photograph(page, testInfo, "checkout-points-earned");
+});
+
+test("keeps the points earned and the balance after a page reload", async ({ page }) => {
+  await page.goto("/");
+  await fillShipping(page);
+  await page.getByRole("button", { name: "Redeem points", exact: true }).click();
+  await expect(page.locator("#discount")).toBeVisible();
+  const redeemed = centsIn(await page.locator("#discount").textContent());
+  const paid = centsIn(await page.locator("#total").textContent());
+  await page.getByRole("button", { name: /Place order and pay/ }).click();
+  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  const earned = Math.floor(paid / 100);
+
+  await page.reload();
+
+  await expect(page.locator("#points-earned")).toHaveText(`Points earned on this order: ${earned}`);
+  await expect(page.locator("#points-balance")).toHaveText(`Points balance: ${DEMO_POINTS - redeemed + earned}`);
+  await expect(page.getByRole("button", { name: "Redeem points", exact: true })).toBeDisabled();
+});
+
+test("starts from the demo balance when the saved balance is malformed", async ({ page }) => {
+  await page.goto("/");
+  await fillShipping(page);
+  await page.getByRole("button", { name: /Place order and pay/ }).click();
+  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  const saved = JSON.parse((await page.evaluate((key) => localStorage.getItem(key), ORDER_KEY))!);
+
+  for (const broken of [{ ...saved, balance: -1 }, { ...saved, balance: undefined }]) {
+    await page.evaluate(({ key, value }) => localStorage.setItem(key, value), {
+      key: ORDER_KEY,
+      value: JSON.stringify(broken),
+    });
+    await page.reload();
+
+    await expect(page.locator("#order-number")).toBeHidden();
+    await expect(page.locator("#points-earned")).toBeHidden();
+    await expect(page.locator("#points-balance")).toHaveText(`Points balance: ${DEMO_POINTS}`);
+  }
 });

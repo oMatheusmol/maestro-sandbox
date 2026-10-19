@@ -30,21 +30,23 @@ const COUPONS: Coupon[] = [
   { code: "OLD5", kind: "fixed", amount: Money.fromBRL("5,00"), expiresAt: new Date("2020-01-01T00:00:00Z") },
 ];
 
-/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance resets on reload while the placed order is kept in this browser. */
+/** Made-up demo account and starting balance for loyalty points; checkout has no sign-in, so a reload restores the balance only with the placed order kept in this browser. */
 const DEMO_USER_ID = "demo-user";
 const DEMO_POINTS = 1000;
 const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
 
-/** Where this browser keeps the placed order, so a reload shows it again with the same order number. */
+/** Where this browser keeps the placed order and its loyalty balance, so a reload shows them again with the same order number. */
 const ORDER_KEY = "sandbox-shop:placed-order";
 
-/** The captured fields of a placed order, as kept under ORDER_KEY. */
+/** The captured fields of a placed order, as kept under ORDER_KEY, with the balance left after it. */
 interface SavedOrder {
   number: string;
   method: ShippingMethod;
   deliveryDate?: string;
   costCents: number;
   totalCents: number;
+  pointsEarned: number;
+  balance: number;
 }
 
 const METHODS: ShippingMethod[] = ["standard", "express", "scheduled"];
@@ -192,7 +194,11 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !METHODS.some((option) => option === saved.method) ||
     (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
     !Number.isInteger(saved.costCents) ||
-    !Number.isInteger(saved.totalCents)
+    !Number.isInteger(saved.totalCents) ||
+    !Number.isInteger(saved.pointsEarned) ||
+    typeof saved.balance !== "number" ||
+    !Number.isInteger(saved.balance) ||
+    saved.balance < 0
   ) {
     return undefined;
   }
@@ -209,6 +215,8 @@ function showPlaced(saved: SavedOrder): void {
   const date = saved.deliveryDate ? ` for ${saved.deliveryDate}` : "";
   deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[saved.method]}${date}. Shipping: ${new Money(saved.costCents).toBRL()}. Total: ${new Money(saved.totalCents).toBRL()}.`;
   deliveryDetails.hidden = false;
+  pointsEarnedLine.textContent = `Points earned on this order: ${saved.pointsEarned}`;
+  pointsEarnedLine.hidden = false;
 }
 
 render();
@@ -218,9 +226,11 @@ const restored = savedOrderOf(localStorage.getItem(ORDER_KEY));
 if (restored) {
   orderNumber = restored.number;
   method = restored.method;
+  balance = restored.balance;
   dateInput.value = restored.deliveryDate ?? "";
   document.querySelector<HTMLInputElement>(`input[name="method"][value="${method}"]`)!.checked = true;
   render();
+  renderPoints();
   showPlaced(restored);
 }
 
@@ -278,14 +288,14 @@ form.addEventListener("submit", (event) => {
   const earned = pointsEarned(orderTotal(order));
   balance = balance - pointsSpent + earned;
   renderPoints();
-  pointsEarnedLine.textContent = `Points earned on this order: ${earned}`;
-  pointsEarnedLine.hidden = false;
   const saved: SavedOrder = {
     number,
     method: delivery.method,
     deliveryDate: delivery.deliveryDate,
     costCents: delivery.cost.cents,
     totalCents: orderTotal(order).cents,
+    pointsEarned: earned,
+    balance,
   };
   localStorage.setItem(ORDER_KEY, JSON.stringify(saved));
   showPlaced(saved);
