@@ -2,6 +2,7 @@ const record = document.querySelector<HTMLButtonElement>("#record")!;
 const stop = document.querySelector<HTMLButtonElement>("#stop")!;
 const status = document.querySelector<HTMLParagraphElement>("#status")!;
 const notes = document.querySelector<HTMLUListElement>("#notes")!;
+const recorderSection = document.querySelector<HTMLElement>("#recorder")!;
 
 let recorder: MediaRecorder | null = null;
 let chunks: Blob[] = [];
@@ -11,6 +12,7 @@ let startedAt = 0;
 const kilobytes = (bytes: number) => `${Math.ceil(bytes / 1024)} KB`;
 
 record.addEventListener("click", async () => {
+  recorderSection.dataset.capturedBytes = "0";
   record.disabled = true;
   status.textContent = "Waiting for microphone permission…";
   let stream: MediaStream;
@@ -23,8 +25,12 @@ record.addEventListener("click", async () => {
   }
   chunks = [];
   recorder = new MediaRecorder(stream);
-  recorder.addEventListener("dataavailable", (event) => chunks.push(event.data));
-  recorder.start();
+  recorder.addEventListener("dataavailable", (event) => {
+    chunks.push(event.data);
+    recorderSection.dataset.capturedBytes = String(chunks.reduce((total, chunk) => total + chunk.size, 0));
+  });
+  // Chunks arrive every 100 ms, so the captured audio is reported while recording, before Stop.
+  recorder.start(100);
   startedAt = performance.now();
   stop.disabled = false;
   status.textContent = "Recording…";

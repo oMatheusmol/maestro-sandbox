@@ -148,3 +148,31 @@ test("shows an error status and re-enables Record when the microphone is refused
   await expect(recordButton).toBeEnabled();
   await photograph(page, testInfo, "recorder");
 });
+
+test("reports captured audio on the recorder before Stop is clicked", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
+  await page.goto("/recorder.html");
+
+  await page.getByRole("button", { name: "Record", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
+  await expect(page.getByRole("status")).toHaveText("Recording…");
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
+
+  const upload = page.waitForResponse("/api/notes");
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  expect((await upload).status()).toBe(201);
+  await photograph(page, testInfo, "recorder");
+});
+
+test("reports no captured audio when the microphone is refused", async ({ page }, testInfo) => {
+  await page.addInitScript(holdMicrophoneRequest);
+  await page.goto("/recorder.html");
+
+  await page.getByRole("button", { name: "Record", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Waiting for microphone permission…");
+
+  await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
+  await expect(page.getByRole("status")).toHaveText("The microphone is not available. Allow it in the browser and try again.");
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
+  await photograph(page, testInfo, "recorder");
+});
