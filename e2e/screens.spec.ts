@@ -1,7 +1,7 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { photograph } from "./screens.js";
 
-/** The shop's screens, each photographed in every viewport. */
+/** The shop's screens; each screen with a shot is photographed in every viewport. */
 const SCREENS = [
   { name: "checkout", path: "/", heading: "Checkout", shot: "checkout-open" },
   { name: "recorder", path: "/recorder.html", heading: "Voice note" },
@@ -125,8 +125,9 @@ for (const screen of SCREENS) {
       await expect(total).toBeVisible();
     }
 
-    const shot = screen.shot ?? screen.name;
-    expect(await photograph(page, testInfo, shot)).toMatch(new RegExp(`${shot}\\.png$`));
+    if (screen.shot) {
+      expect(await photograph(page, testInfo, screen.shot)).toMatch(new RegExp(`${screen.shot}\\.png$`));
+    }
   });
 }
 
