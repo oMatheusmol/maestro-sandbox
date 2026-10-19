@@ -2,6 +2,7 @@ import { cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/ca
 import { type Coupon, discountFor } from "../src/coupon.js";
 import { pointsCoupon, pointsEarned } from "../src/loyalty.js";
 import { Money } from "../src/money.js";
+import { ORDER_NUMBER_LENGTH, ORDER_NUMBER_PATTERN, orderNumberFrom } from "../src/order-number.js";
 import { type Order, orderTotal } from "../src/report.js";
 import { isCalendarDate, quoteShipping, type ShippingMethod, type ShippingQuote } from "../src/shipping.js";
 
@@ -29,10 +30,22 @@ const COUPONS: Coupon[] = [
   { code: "OLD5", kind: "fixed", amount: Money.fromBRL("5,00"), expiresAt: new Date("2020-01-01T00:00:00Z") },
 ];
 
-/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance resets on reload. */
+/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance resets on reload while the placed order is kept in this browser. */
 const DEMO_USER_ID = "demo-user";
 const DEMO_POINTS = 1000;
 const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
+
+/** Where this browser keeps the placed order, so a reload shows it again with the same order number. */
+const ORDER_KEY = "sandbox-shop:placed-order";
+
+/** The captured fields of a placed order, as kept under ORDER_KEY. */
+interface SavedOrder {
+  number: string;
+  method: ShippingMethod;
+  deliveryDate?: string;
+  costCents: number;
+  totalCents: number;
+}
 
 const METHODS: ShippingMethod[] = ["standard", "express", "scheduled"];
 const METHOD_NAMES: Record<ShippingMethod, string> = { standard: "Standard", express: "Express", scheduled: "Scheduled" };
@@ -54,6 +67,7 @@ const discountLine = document.querySelector<HTMLParagraphElement>("#discount")!;
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
+const orderNumberLine = document.querySelector<HTMLParagraphElement>("#order-number")!;
 
 for (const { name, line } of CART) {
   const item = document.createElement("li");
@@ -72,7 +86,7 @@ const weightKg = cartWeight(cart);
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
-let order: Order | undefined;
+let orderNumber: string | undefined;
 let balance = DEMO_POINTS;
 let pointsSpent = 0;
 
@@ -164,8 +178,51 @@ function applyDiscount(coupon: Coupon): void {
   render();
 }
 
+/** The placed order kept under ORDER_KEY, or undefined when none is kept or the stored value is malformed. */
+function savedOrderOf(raw: string | null): SavedOrder | undefined {
+  let saved: Partial<SavedOrder> | null;
+  try {
+    saved = JSON.parse(raw ?? "null");
+  } catch {
+    return undefined;
+  }
+  if (
+    typeof saved?.number !== "string" ||
+    !ORDER_NUMBER_PATTERN.test(saved.number) ||
+    !METHODS.some((option) => option === saved.method) ||
+    (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
+    !Number.isInteger(saved.costCents) ||
+    !Number.isInteger(saved.totalCents)
+  ) {
+    return undefined;
+  }
+  return saved as SavedOrder;
+}
+
+/** Shows a placed order: its number and delivery details, and locks the controls so the captured order stays as it was. */
+function showPlaced(saved: SavedOrder): void {
+  pay.disabled = true;
+  lockAfterCapture();
+  placed.textContent = "Order placed. You will get an email with the tracking code.";
+  orderNumberLine.textContent = `Order number: ${saved.number}`;
+  orderNumberLine.hidden = false;
+  const date = saved.deliveryDate ? ` for ${saved.deliveryDate}` : "";
+  deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[saved.method]}${date}. Shipping: ${new Money(saved.costCents).toBRL()}. Total: ${new Money(saved.totalCents).toBRL()}.`;
+  deliveryDetails.hidden = false;
+}
+
 render();
 renderPoints();
+
+const restored = savedOrderOf(localStorage.getItem(ORDER_KEY));
+if (restored) {
+  orderNumber = restored.number;
+  method = restored.method;
+  dateInput.value = restored.deliveryDate ?? "";
+  document.querySelector<HTMLInputElement>(`input[name="method"][value="${method}"]`)!.checked = true;
+  render();
+  showPlaced(restored);
+}
 
 couponForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -197,7 +254,7 @@ dateInput.addEventListener("input", () => render());
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  if (order) {
+  if (orderNumber) {
     return;
   }
   const now = new Date();
@@ -207,8 +264,9 @@ form.addEventListener("submit", (event) => {
   }
   const quote = quoteFor(method, now);
   const delivery = { method, cost: quote.cost, deliveryDate: quote.deliveryDate };
-  order = {
-    id: crypto.randomUUID(),
+  const number = orderNumberFrom(crypto.getRandomValues(new Uint8Array(ORDER_NUMBER_LENGTH)));
+  const order: Order = {
+    id: number,
     lines: cart,
     discount,
     shipping: delivery,
@@ -216,15 +274,19 @@ form.addEventListener("submit", (event) => {
     placedOn: utcDate(now, 0),
     pointsRedeemed: pointsSpent,
   };
+  orderNumber = number;
   const earned = pointsEarned(orderTotal(order));
   balance = balance - pointsSpent + earned;
   renderPoints();
   pointsEarnedLine.textContent = `Points earned on this order: ${earned}`;
   pointsEarnedLine.hidden = false;
-  pay.disabled = true;
-  lockAfterCapture();
-  placed.textContent = "Order placed. You will get an email with the tracking code.";
-  const date = delivery.deliveryDate ? ` for ${delivery.deliveryDate}` : "";
-  deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[delivery.method]}${date}. Shipping: ${delivery.cost.toBRL()}. Total: ${orderTotal(order).toBRL()}.`;
-  deliveryDetails.hidden = false;
+  const saved: SavedOrder = {
+    number,
+    method: delivery.method,
+    deliveryDate: delivery.deliveryDate,
+    costCents: delivery.cost.cents,
+    totalCents: orderTotal(order).cents,
+  };
+  localStorage.setItem(ORDER_KEY, JSON.stringify(saved));
+  showPlaced(saved);
 });
