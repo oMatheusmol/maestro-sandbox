@@ -11,7 +11,7 @@ export default defineConfig({
   testDir: "e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
-  reporter: "list",
+  reporter: [["list"], ["json", { outputFile: "test-results/report.json" }]],
   use: {
     baseURL: `http://localhost:${PORT}`,
     browserName: "chromium",
