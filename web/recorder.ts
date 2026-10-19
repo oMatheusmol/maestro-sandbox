@@ -48,7 +48,15 @@ record.addEventListener("click", async () => {
     status.textContent = "Recording…";
   });
   // Chunks arrive every 100 ms, so the captured audio is reported while recording, before Stop.
-  startingRecorder.start(100);
+  try {
+    startingRecorder.start(100);
+  } catch {
+    clearTimeout(startTimer);
+    stream.getTracks().forEach((track) => track.stop());
+    recorder = null;
+    record.disabled = false;
+    status.textContent = "Recording could not start. Try again.";
+  }
 });
 
 stop.addEventListener("click", async () => {
