@@ -13,7 +13,7 @@ async function fillShipping(page: Page): Promise<void> {
 async function placeOrder(page: Page): Promise<void> {
   await fillShipping(page);
   await page.getByRole("button", { name: /Place order and pay/ }).click();
-  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
+  await expect(page.getByRole("status")).toContainText("Order placed: ");
 }
 
 test("keeps the coupon discount on a placed order after a page reload", async ({ page }, testInfo) => {

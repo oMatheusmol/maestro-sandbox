@@ -72,10 +72,14 @@ const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
 const couponError = document.querySelector<HTMLParagraphElement>("#coupon-error")!;
 const discountLine = document.querySelector<HTMLParagraphElement>("#discount")!;
+const expiryLine = document.createElement("p");
+expiryLine.id = "coupon-expiry";
+expiryLine.className = "discount";
+expiryLine.hidden = true;
+discountLine.after(expiryLine);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
-const orderNumberLine = document.querySelector<HTMLParagraphElement>("#order-number")!;
 
 for (const { name, line } of CART) {
   const item = document.createElement("li");
@@ -183,6 +187,8 @@ function applyDiscount(coupon: Coupon): void {
       ? `Coupon ${coupon.code}: free shipping`
       : `Coupon ${coupon.code}: -${discount.toBRL()}`;
   discountLine.hidden = false;
+  expiryLine.textContent = `Expires ${coupon.expiresAt.toISOString().slice(0, 10)}`;
+  expiryLine.hidden = false;
   render();
 }
 
@@ -228,13 +234,11 @@ function pendingDiscountOf(raw: string | null): PendingDiscount | undefined {
   return undefined;
 }
 
-/** Shows a placed order: its number and delivery details, the discount it came from, and locks the controls so the captured order stays as it was. */
+/** Shows a placed order: its number in the confirmation and its delivery details, the discount it came from, and locks the controls so the captured order stays as it was. */
 function showPlaced(saved: SavedOrder): void {
   pay.disabled = true;
   lockAfterCapture();
-  placed.textContent = "Order placed. You will get an email with the tracking code.";
-  orderNumberLine.textContent = `Order number: ${saved.number}`;
-  orderNumberLine.hidden = false;
+  placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
   if (saved.discountLabel) {
     discountLine.textContent = saved.discountLabel;
     discountLine.hidden = false;
