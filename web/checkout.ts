@@ -38,7 +38,10 @@ const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
 /** Where this browser keeps the placed order, so a reload shows it again with the same order number. */
 const ORDER_KEY = "sandbox-shop:placed-order";
 
-/** The captured fields of a placed order, and the points balance after it, as kept under ORDER_KEY. */
+/** Where this browser keeps an unplaced discount, so a reload applies it again. */
+const DISCOUNT_KEY = "sandbox-shop:pending-discount";
+
+/** The captured fields of a placed order, the points balance after it, and the discount line it showed, as kept under ORDER_KEY. */
 interface SavedOrder {
   number: string;
   method: ShippingMethod;
@@ -46,7 +49,11 @@ interface SavedOrder {
   costCents: number;
   totalCents: number;
   balanceAfter: number;
+  discountLabel?: string;
 }
+
+/** An unplaced discount as kept under DISCOUNT_KEY: a coupon code, or the points redeemed. */
+type PendingDiscount = { code: string } | { points: number };
 
 const METHODS: ShippingMethod[] = ["standard", "express", "scheduled"];
 const METHOD_NAMES: Record<ShippingMethod, string> = { standard: "Standard", express: "Express", scheduled: "Scheduled" };
@@ -207,22 +214,63 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !Number.isInteger(saved.totalCents) ||
     typeof saved?.balanceAfter !== "number" ||
     !Number.isInteger(saved.balanceAfter) ||
-    saved.balanceAfter < 0
+    saved.balanceAfter < 0 ||
+    (saved.discountLabel !== undefined && typeof saved.discountLabel !== "string")
   ) {
     return undefined;
   }
   return saved as SavedOrder;
 }
 
-/** Shows a placed order: its number in the confirmation and its delivery details, and locks the controls so the captured order stays as it was. */
+/** The unplaced discount kept under DISCOUNT_KEY, or undefined when none is kept or the stored value is malformed. */
+function pendingDiscountOf(raw: string | null): PendingDiscount | undefined {
+  let saved: Partial<{ code: unknown; points: unknown }> | null;
+  try {
+    saved = JSON.parse(raw ?? "null");
+  } catch {
+    return undefined;
+  }
+  if (typeof saved?.code === "string") {
+    return { code: saved.code };
+  }
+  if (Number.isInteger(saved?.points) && (saved?.points as number) > 0) {
+    return { points: saved?.points as number };
+  }
+  return undefined;
+}
+
+/** Shows a placed order: its number in the confirmation and its delivery details, the discount it came from, and locks the controls so the captured order stays as it was. */
 function showPlaced(saved: SavedOrder): void {
   pay.disabled = true;
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
+  if (saved.discountLabel) {
+    discountLine.textContent = saved.discountLabel;
+    discountLine.hidden = false;
+  }
   const date = saved.deliveryDate ? ` for ${saved.deliveryDate}` : "";
   deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[saved.method]}${date}. Shipping: ${new Money(saved.costCents).toBRL()}. Total: ${new Money(saved.totalCents).toBRL()}.`;
   deliveryDetails.hidden = false;
+}
+
+/** Applies an unplaced discount kept from before the reload; a refused or unknown one is dropped from storage. */
+function restoreDiscount(pending: PendingDiscount): void {
+  try {
+    if ("code" in pending) {
+      const coupon = COUPONS.find((c) => c.code === pending.code);
+      if (!coupon) {
+        throw new Error(`Unknown coupon code: ${pending.code}`);
+      }
+      applyDiscount(coupon);
+    } else {
+      const points = Math.min(pending.points, balance, subtotal.cents);
+      applyDiscount(pointsCoupon(points, POINTS_EXPIRES_AT));
+      pointsSpent = points;
+    }
+  } catch {
+    localStorage.removeItem(DISCOUNT_KEY);
+  }
 }
 
 render();
@@ -238,6 +286,13 @@ if (restored) {
   renderPoints();
   render();
   showPlaced(restored);
+} else {
+  const pending = pendingDiscountOf(localStorage.getItem(DISCOUNT_KEY));
+  if (pending) {
+    restoreDiscount(pending);
+  } else {
+    localStorage.removeItem(DISCOUNT_KEY);
+  }
 }
 
 couponForm.addEventListener("submit", (event) => {
@@ -250,6 +305,7 @@ couponForm.addEventListener("submit", (event) => {
   }
   try {
     applyDiscount(coupon);
+    localStorage.setItem(DISCOUNT_KEY, JSON.stringify({ code: coupon.code }));
   } catch (error) {
     couponError.textContent = error instanceof Error ? error.message : String(error);
   }
@@ -259,6 +315,7 @@ redeemButton.addEventListener("click", () => {
   const points = Math.min(balance, subtotal.cents);
   applyDiscount(pointsCoupon(points, POINTS_EXPIRES_AT));
   pointsSpent = points;
+  localStorage.setItem(DISCOUNT_KEY, JSON.stringify({ points }));
 });
 
 form.addEventListener("change", () => {
@@ -303,7 +360,9 @@ form.addEventListener("submit", (event) => {
     costCents: delivery.cost.cents,
     totalCents: orderTotal(order).cents,
     balanceAfter: balance,
+    discountLabel: discountLine.hidden ? undefined : (discountLine.textContent ?? undefined),
   };
   localStorage.setItem(ORDER_KEY, JSON.stringify(saved));
+  localStorage.removeItem(DISCOUNT_KEY);
   showPlaced(saved);
 });
