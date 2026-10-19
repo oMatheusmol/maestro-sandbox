@@ -191,5 +191,5 @@ test("reports no captured audio when the microphone is refused", async ({ page, 
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
   await expect(status).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-refused")).toMatch(/recorder-refused\.png$/);
 });
