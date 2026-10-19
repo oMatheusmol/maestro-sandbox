@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { ORDER_PLACED } from "./order-placed.js";
 import { photograph } from "./screens.js";
 
 /** The browser key the checkout keeps the placed order under. */
@@ -10,28 +11,41 @@ async function fillShipping(page: Page): Promise<void> {
   await page.getByLabel("CEP", { exact: true }).fill("12345-678");
 }
 
-/** Places an order from a fresh checkout and returns its order number. */
+/** Places an order from a fresh checkout and returns its order number, read from the confirmation. */
 async function placeOrder(page: Page): Promise<string> {
   await page.goto("/");
   await fillShipping(page);
   await page.getByRole("button", { name: /Place order and pay/ }).click();
-  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
-  const line = await page.locator("#order-number").textContent();
-  return line!.replace("Order number: ", "");
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
+  return (await page.getByRole("status").textContent())!.match(/Order placed: (\w{8})\./)![1]!;
 }
 
-test("shows the order number once placed and keeps it after a page reload", async ({ page }, testInfo) => {
+test("shows the order number in the confirmation message", async ({ page }, testInfo) => {
   const number = await placeOrder(page);
   expect(number).toMatch(/^[0-9A-HJKMNP-TV-Z]{8}$/);
-  await expect(page.locator("#order-number")).toHaveText(`Order number: ${number}`);
+  await photograph(page, testInfo, "checkout-order-number");
+});
+
+test("keeps the order number in the confirmation after a page reload", async ({ page }) => {
+  const number = await placeOrder(page);
 
   await page.reload();
 
-  await expect(page.getByRole("status")).toHaveText("Order placed. You will get an email with the tracking code.");
-  await expect(page.locator("#order-number")).toHaveText(`Order number: ${number}`);
+  await expect(page.getByRole("status")).toHaveText(`Order placed: ${number}. You will get an email with the tracking code.`);
   await expect(page.locator("#pay")).toBeDisabled();
   await expect(page.getByLabel("Standard")).toBeDisabled();
-  await photograph(page, testInfo, "checkout-order-number");
+});
+
+test("shows the captured total on the pay button after a restored order", async ({ page }, testInfo) => {
+  await page.goto("/");
+  const saved = { number: "ABCDEFGH", method: "standard", costCents: 0, totalCents: 10000, balanceAfter: 1000 };
+  await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: JSON.stringify(saved) });
+  await page.reload();
+
+  await expect(page.locator("#pay")).toBeDisabled();
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 100,00");
+  await expect(page.locator("#delivery-details")).toContainText("Total: R$ 100,00.");
+  await photograph(page, testInfo, "checkout-restored-total");
 });
 
 test("gives a second order a different number once the first is cleared", async ({ page }) => {
@@ -51,7 +65,6 @@ test("starts a fresh checkout when the saved order is malformed", async ({ page 
     await page.reload();
 
     await expect(page.locator("#placed")).toBeEmpty();
-    await expect(page.locator("#order-number")).toBeHidden();
     await expect(page.locator("#pay")).toBeEnabled();
   }
 });
@@ -66,7 +79,6 @@ test("starts a fresh checkout when the saved order has no valid points balance",
     await page.reload();
 
     await expect(page.locator("#placed")).toBeEmpty();
-    await expect(page.locator("#order-number")).toBeHidden();
     await expect(page.locator("#points-balance")).toHaveText("Points balance: 1000");
     await expect(page.locator("#pay")).toBeEnabled();
   }
