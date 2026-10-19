@@ -227,6 +227,7 @@ if (restored) {
   balance = restored.balanceAfter;
   renderPoints();
   render();
+  total.textContent = `Total do pedido: ${new Money(restored.totalCents).toBRL()}`;
   showPlaced(restored);
 }
 
