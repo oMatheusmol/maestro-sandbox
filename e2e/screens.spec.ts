@@ -1,10 +1,11 @@
+import { basename } from "node:path";
 import { expect, test, type Locator } from "@playwright/test";
 import { photograph } from "./screens.js";
 
-/** The shop's screens, each photographed in every viewport. */
+/** The shop's screens, each photographed in every viewport. `file` is the literal name the shot is saved as. */
 const SCREENS = [
-  { name: "checkout", path: "/", heading: "Checkout", shot: "checkout-open" },
-  { name: "recorder", path: "/recorder.html", heading: "Voice note" },
+  { name: "checkout", path: "/", heading: "Checkout", shot: "checkout-open", file: "checkout-open.png" },
+  { name: "recorder", path: "/recorder.html", heading: "Voice note", shot: "recorder-screen", file: "recorder-screen.png" },
 ];
 
 test("menu uses Arial when navigating between screens", async ({ page }, testInfo) => {
@@ -125,8 +126,7 @@ for (const screen of SCREENS) {
       await expect(total).toBeVisible();
     }
 
-    const shot = screen.shot ?? screen.name;
-    expect(await photograph(page, testInfo, shot)).toMatch(new RegExp(`${shot}\\.png$`));
+    expect(basename(await photograph(page, testInfo, screen.shot))).toBe(screen.file);
   });
 }
 
