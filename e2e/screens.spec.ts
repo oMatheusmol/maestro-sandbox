@@ -78,7 +78,8 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
   await page.getByRole("link", { name: "Voice note", exact: true }).click();
   await expectReadableText(page.locator("h1, .page > p, .status"));
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  // The fake microphone can resolve getUserMedia slowly. Stop only enables once recording has started, so the longer limit covers that start.
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
   await page.waitForTimeout(500);
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("Not sent (503). Try again.");
