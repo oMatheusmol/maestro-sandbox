@@ -107,6 +107,13 @@ const itemCount = document.createElement("p");
 itemCount.className = "item-count";
 itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
 total.after(itemCount);
+const averagePrice = document.createElement("p");
+averagePrice.id = "average-price";
+averagePrice.hidden = quantity === 0;
+if (quantity > 0) {
+  averagePrice.textContent = `Average price per item: ${new Money(Math.round(subtotal.cents / quantity)).toBRL()}`;
+}
+itemCount.after(averagePrice);
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
