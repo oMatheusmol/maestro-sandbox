@@ -33,13 +33,12 @@ test("keeps the coupon discount on a placed order after a page reload", async ({
 test("keeps the points discount on a placed order after a page reload", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Redeem points", exact: true }).click();
-  const discount = await page.locator("#discount").textContent();
   await placeOrder(page);
 
   await page.reload();
 
   await expect(page.locator("#discount")).toBeVisible();
-  await expect(page.locator("#discount")).toHaveText(discount!);
+  await expect(page.locator("#discount")).toHaveText("Points redeemed: -R$ 10,00");
 });
 
 test("keeps an unplaced points redemption after a page reload", async ({ page }) => {
