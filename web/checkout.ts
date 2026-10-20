@@ -1,6 +1,6 @@
 import { cartQuantity, cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
 import { type Coupon, discountFor } from "../src/coupon.js";
-import { pointsCoupon, pointsEarned } from "../src/loyalty.js";
+import { CENTS_PER_POINT, pointsCoupon, pointsEarned } from "../src/loyalty.js";
 import { Money } from "../src/money.js";
 import { ORDER_NUMBER_LENGTH, ORDER_NUMBER_PATTERN, orderNumberFrom } from "../src/order-number.js";
 import { type Order, orderTotal } from "../src/report.js";
@@ -81,6 +81,9 @@ expiryLine.className = "discount";
 expiryLine.hidden = true;
 discountLine.after(expiryLine);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
+const pointsValue = document.createElement("p");
+pointsValue.id = "points-value";
+pointsBalance.after(pointsValue);
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
 
@@ -208,6 +211,7 @@ function lockAfterCapture(): void {
 /** Shows the points balance; redeeming is off when nothing is left to redeem. */
 function renderPoints(): void {
   pointsBalance.textContent = `Points balance: ${balance}`;
+  pointsValue.textContent = `Value in reais: ${new Money(balance * CENTS_PER_POINT).toBRL()}`;
   redeemButton.disabled = balance === 0;
 }
 

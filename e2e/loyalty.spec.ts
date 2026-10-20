@@ -50,6 +50,22 @@ test("redeeming points takes the points off the total and the pay button", async
   await photograph(page, testInfo, "checkout-points-redeemed");
 });
 
+test("shows the points balance's value in reais and updates it after an order", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await fillShipping(page);
+  // 1 point is worth R$ 0,01: the demo balance of 1000 points is R$ 10,00.
+  await expect(page.locator("#points-value")).toHaveText("Value in reais: R$ 10,00");
+  await page.getByRole("button", { name: "Redeem points", exact: true }).click();
+
+  await page.getByRole("button", { name: /Place order and pay/ }).click();
+
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
+  // The order redeems the whole balance and earns 1118 points for R$ 1.118,70, so 1118 points are left: R$ 11,18.
+  await expect(page.locator("#points-balance")).toHaveText("Points balance: 1118");
+  await expect(page.locator("#points-value")).toHaveText("Value in reais: R$ 11,18");
+  await photograph(page, testInfo, "checkout-points-value");
+});
+
 test("applying a coupon code after redeeming removes the points discount", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Redeem points", exact: true }).click();
