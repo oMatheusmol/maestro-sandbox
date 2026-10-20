@@ -12,7 +12,9 @@ const EMPTY_RECORDER = `
     addEventListener(type, listener) {
       (this.listeners[type] ||= []).push(listener);
     }
-    start() {}
+    start() {
+      setTimeout(() => (this.listeners.start || []).forEach((listener) => listener(new Event("start"))), 0);
+    }
     stop() {
       setTimeout(() => {
         (this.listeners.dataavailable || []).forEach((listener) => listener({ data: new Blob([]) }));
@@ -33,7 +35,9 @@ const LIVE_RECORDER = `
     addEventListener(type, listener) {
       (this.listeners[type] ||= []).push(listener);
     }
-    start() {}
+    start() {
+      setTimeout(() => (this.listeners.start || []).forEach((listener) => listener(new Event("start"))), 0);
+    }
     stop() {
       setTimeout(() => {
         const live = this.stream.getTracks().some((track) => track.readyState === "live");
@@ -41,6 +45,54 @@ const LIVE_RECORDER = `
         (this.listeners.dataavailable || []).forEach((listener) => listener({ data }));
         (this.listeners.stop || []).forEach((listener) => listener(new Event("stop")));
       }, 0);
+    }
+  };
+`;
+
+// Replaces MediaRecorder with a recorder whose start() throws, and keeps the stream it was given.
+const THROWING_RECORDER = `
+  window.MediaRecorder = class {
+    constructor(stream) {
+      this.stream = stream;
+      this.mimeType = "audio/webm";
+      window.capturedStream = stream;
+    }
+    addEventListener() {}
+    start() {
+      throw new DOMException("Recorder failed to start", "InvalidStateError");
+    }
+  };
+`;
+
+// Replaces MediaRecorder with a recorder whose start() never dispatches the start event, and counts stop() calls.
+const SILENT_START_RECORDER = `
+  window.recorderStops = 0;
+  window.MediaRecorder = class {
+    constructor(stream) {
+      this.stream = stream;
+      this.mimeType = "audio/webm";
+      this.state = "recording";
+    }
+    addEventListener() {}
+    start() {}
+    stop() {
+      window.recorderStops += 1;
+    }
+  };
+`;
+
+// Replaces MediaRecorder with a recorder already inactive whose stop() throws, as a browser does once it has ended.
+const ENDED_SILENT_START_RECORDER = `
+  window.MediaRecorder = class {
+    constructor(stream) {
+      this.stream = stream;
+      this.mimeType = "audio/webm";
+      this.state = "inactive";
+    }
+    addEventListener() {}
+    start() {}
+    stop() {
+      throw new DOMException("Recorder is not recording", "InvalidStateError");
     }
   };
 `;
@@ -69,14 +121,14 @@ test("posts the recorded audio, not an empty body", async ({ page, context }, te
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
   await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
-  await page.waitForTimeout(500);
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
 
   const upload = page.waitForResponse("/api/notes");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   expect((await upload).status()).toBe(201);
 
   await expect(page.getByLabel("Sent notes").locator("li").first()).toContainText(/\d+\.\d+ s · [1-9]\d* KB/);
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-posted")).toMatch(/recorder-posted\.png$/);
 });
 
 test("uploads the audio captured before the microphone is released", async ({ page, context }, testInfo) => {
@@ -85,13 +137,13 @@ test("uploads the audio captured before the microphone is released", async ({ pa
   await page.goto("/recorder.html");
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
   const upload = page.waitForResponse("/api/notes");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   expect((await upload).status()).toBe(201);
 
   await expect(page.getByLabel("Sent notes").locator("li").first()).toContainText(/\d+\.\d+ s · [1-9]\d* KB/);
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-released")).toMatch(/recorder-released\.png$/);
 });
 
 test("sends nothing for an empty recording", async ({ page, context }, testInfo) => {
@@ -105,14 +157,14 @@ test("sends nothing for an empty recording", async ({ page, context }, testInfo)
   await page.goto("/recorder.html");
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
   await page.getByRole("button", { name: "Stop", exact: true }).click();
 
   await expect(page.getByRole("status")).toHaveText("Nothing was recorded. Try again.");
   await expect(page.getByRole("button", { name: "Record", exact: true })).toBeEnabled();
   await expect(page.getByLabel("Sent notes").locator("li")).toHaveCount(0);
   expect(uploads).toBe(0);
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-empty")).toMatch(/recorder-empty\.png$/);
 });
 
 test("shows a pending microphone status and keeps Record disabled until the request resolves", async ({ page }, testInfo) => {
@@ -126,7 +178,7 @@ test("shows a pending microphone status and keeps Record disabled until the requ
   await recordButton.click();
   await expect(status).toHaveText("Waiting for microphone permission…");
   await expect(recordButton).toBeDisabled();
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-pending")).toMatch(/recorder-pending\.png$/);
 
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(true));
   await expect(status).toHaveText("Recording…");
@@ -146,7 +198,7 @@ test("shows an error status and re-enables Record when the microphone is refused
   await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
   await expect(status).toHaveText("The microphone is not available. Allow it in the browser and try again.");
   await expect(recordButton).toBeEnabled();
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-refused")).toMatch(/recorder-refused\.png$/);
 });
 
 test("reports captured audio on the recorder before Stop is clicked", async ({ page, context }, testInfo) => {
@@ -161,18 +213,91 @@ test("reports captured audio on the recorder before Stop is clicked", async ({ p
   const upload = page.waitForResponse("/api/notes");
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   expect((await upload).status()).toBe(201);
-  await photograph(page, testInfo, "recorder");
+  expect(await photograph(page, testInfo, "recorder-captured")).toMatch(/recorder-captured\.png$/);
 });
 
-test("reports no captured audio when the microphone is refused", async ({ page }, testInfo) => {
+test("reports no captured audio when the microphone is refused", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
   await page.addInitScript(holdMicrophoneRequest);
+  await page.goto("/recorder.html");
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
+
+  const recordButton = page.getByRole("button", { name: "Record", exact: true });
+  const status = page.getByRole("status");
+
+  await recordButton.click();
+  await expect(status).toHaveText("Waiting for microphone permission…");
+  await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(true));
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeEnabled({ timeout: 15_000 });
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", /^[1-9]\d*$/, { timeout: 15_000 });
+
+  const upload = page.waitForResponse("/api/notes");
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  expect((await upload).status()).toBe(201);
+  await expect(recordButton).toBeEnabled();
+
+  await recordButton.click();
+  await expect(status).toHaveText("Waiting for microphone permission…");
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
+
+  await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
+  await expect(status).toHaveText("The microphone is not available. Allow it in the browser and try again.");
+  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
+  expect(await photograph(page, testInfo, "recorder-no-audio")).toMatch(/recorder-no-audio\.png$/);
+});
+
+test("reports a recorder whose start event never fires and re-enables Record", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
+  await page.addInitScript(SILENT_START_RECORDER);
+  await page.goto("/recorder.html");
+
+  const recordButton = page.getByRole("button", { name: "Record", exact: true });
+  const stopButton = page.getByRole("button", { name: "Stop", exact: true });
+
+  await recordButton.click();
+  await expect(page.getByRole("status")).toHaveText("Recording did not start. Try again.", { timeout: 15_000 });
+  await expect(recordButton).toBeEnabled();
+  await expect(stopButton).toBeDisabled();
+  expect(await photograph(page, testInfo, "recorder-start-missing")).toMatch(/recorder-start-missing\.png$/);
+});
+
+test("stops the MediaRecorder when its start event never fires and the timeout releases it", async ({ page, context }) => {
+  await context.grantPermissions(["microphone"]);
+  await page.addInitScript(SILENT_START_RECORDER);
   await page.goto("/recorder.html");
 
   await page.getByRole("button", { name: "Record", exact: true }).click();
-  await expect(page.getByRole("status")).toHaveText("Waiting for microphone permission…");
+  await expect(page.getByRole("status")).toHaveText("Recording did not start. Try again.", { timeout: 15_000 });
+  expect(await page.evaluate(() => (window as unknown as { recorderStops: number }).recorderStops)).toBe(1);
+});
 
-  await page.evaluate(() => (window as unknown as { settleMicrophone: (grant: boolean) => void }).settleMicrophone(false));
-  await expect(page.getByRole("status")).toHaveText("The microphone is not available. Allow it in the browser and try again.");
-  await expect(page.locator("#recorder")).toHaveAttribute("data-captured-bytes", "0");
+test("re-enables Record with the timeout status when the timed-out recorder has already ended", async ({ page, context }) => {
+  await context.grantPermissions(["microphone"]);
+  await page.addInitScript(ENDED_SILENT_START_RECORDER);
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+  await page.goto("/recorder.html");
+
+  await page.getByRole("button", { name: "Record", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Recording did not start. Try again.", { timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "Record", exact: true })).toBeEnabled();
+  expect(pageErrors).toEqual([]);
+});
+
+test("re-enables Record and shows an error status when the recorder fails to start", async ({ page, context }, testInfo) => {
+  await context.grantPermissions(["microphone"]);
+  await page.addInitScript(THROWING_RECORDER);
+  await page.goto("/recorder.html");
+
+  await page.getByRole("button", { name: "Record", exact: true }).click();
+  await expect(page.getByRole("status")).toHaveText("Recording could not start. Try again.");
+  await expect(page.getByRole("button", { name: "Record", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop", exact: true })).toBeDisabled();
+
+  const trackStates = await page.evaluate(() =>
+    (window as unknown as { capturedStream: MediaStream }).capturedStream.getTracks().map((track) => track.readyState),
+  );
+  expect(trackStates.length).toBeGreaterThan(0);
+  expect(trackStates.every((state) => state === "ended")).toBe(true);
   await photograph(page, testInfo, "recorder");
 });
