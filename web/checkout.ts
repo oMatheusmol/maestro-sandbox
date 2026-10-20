@@ -322,6 +322,7 @@ couponForm.addEventListener("submit", (event) => {
   const coupon = COUPONS.find((c) => c.code === code);
   if (!coupon) {
     couponError.textContent = `Unknown coupon code: ${code}`;
+    couponInput.focus();
     return;
   }
   try {
@@ -329,6 +330,7 @@ couponForm.addEventListener("submit", (event) => {
     localStorage.setItem(DISCOUNT_KEY, JSON.stringify({ code: coupon.code }));
   } catch (error) {
     couponError.textContent = error instanceof Error ? error.message : String(error);
+    couponInput.focus();
   }
 });
 
