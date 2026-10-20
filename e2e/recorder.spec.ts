@@ -115,6 +115,12 @@ const holdMicrophoneRequest = () => {
     });
 };
 
+test("gives the recorder page the document title Recorder", async ({ page }) => {
+  await page.goto("/recorder.html");
+
+  await expect(page).toHaveTitle("Recorder");
+});
+
 test("posts the recorded audio, not an empty body", async ({ page, context }, testInfo) => {
   await context.grantPermissions(["microphone"]);
   await page.goto("/recorder.html");
