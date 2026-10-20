@@ -91,7 +91,16 @@ for (const { name, line } of CART) {
   const price = document.createElement("span");
   price.className = "price";
   price.textContent = line.unitPrice.multiplyBy(line.quantity).toBRL();
-  item.append(label, price);
+  const amounts = document.createElement("span");
+  amounts.className = "amounts";
+  amounts.append(price);
+  if (line.quantity > 1) {
+    const unitPrice = document.createElement("span");
+    unitPrice.className = "unit-price";
+    unitPrice.textContent = `${line.unitPrice.toBRL()} each`;
+    amounts.append(unitPrice);
+  }
+  item.append(label, amounts);
   lines.append(item);
 }
 
