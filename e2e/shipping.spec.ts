@@ -221,6 +221,28 @@ test("applies and replaces free-shipping coupons, keeping express and scheduled 
   await expect(pay(page)).toHaveText("Place order and pay R$ 1.133,70");
 });
 
+test("keeps the chosen shipping option after a page reload", async ({ page }, testInfo) => {
+  await option(page, "Express").click();
+  await page.reload();
+
+  await expect(option(page, "Express").getByRole("radio")).toBeChecked();
+  await expect(option(page, "Standard").getByRole("radio")).not.toBeChecked();
+  await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
+  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.155,70");
+  await expect(pay(page)).toHaveText("Place order and pay R$ 1.155,70");
+  expect(await photograph(page, testInfo, "checkout-shipping-kept")).toMatch(/checkout-shipping-kept\.png$/);
+});
+
+test("ignores a saved shipping option it does not know", async ({ page }) => {
+  await page.evaluate(() => localStorage.setItem("sandbox-shop:shipping-method", "overnight"));
+
+  await page.reload();
+
+  await expect(option(page, "Standard").getByRole("radio")).toBeChecked();
+  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
+  expect(await page.evaluate(() => localStorage.getItem("sandbox-shop:shipping-method"))).toBeNull();
+});
+
 test("fits the delivery controls and pay button in the viewport, with actions after the forms", async ({ page, viewport }, testInfo) => {
   const width = viewport?.width ?? 0;
   expect(width).toBeGreaterThan(0);
