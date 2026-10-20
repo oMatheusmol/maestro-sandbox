@@ -12,7 +12,7 @@ test("applies a percentage coupon to the total and the pay button", async ({ pag
   await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.015,83");
   await expect(page.locator("#coupon-error")).toBeEmpty();
-  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.015,83");
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.015,83 with Standard shipping");
 });
 
 test("shows the expiry date of the applied coupon", async ({ page }, testInfo) => {
@@ -45,7 +45,7 @@ test("refuses an expired coupon and leaves the total unchanged", async ({ page }
   await expect(page.getByRole("alert")).toHaveText("coupon OLD5 expired on 2020-01-01T00:00:00.000Z");
   await expect(page.locator("#discount")).toBeHidden();
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
-  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.128,70");
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.128,70 with Standard shipping");
 });
 
 test("refuses an unknown coupon code", async ({ page }) => {
@@ -90,7 +90,7 @@ test("takes a percentage coupon off the merchandise before express shipping is a
   await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
   await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.042,83");
-  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.042,83");
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.042,83 with Express shipping");
 });
 
 test("takes a fixed coupon off the merchandise with express shipping already chosen", async ({ page }) => {
@@ -103,7 +103,7 @@ test("takes a fixed coupon off the merchandise with express shipping already cho
   await expect(page.locator("#discount")).toHaveText("Coupon SAVE50: -R$ 50,00");
   await expect(page.locator("#free-shipping")).toHaveText("Shipping: R$ 27,00");
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.105,70");
-  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.105,70");
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.105,70 with Express shipping");
 });
 
 test("shows the coupon field and Apply button above the pay button", async ({ page, viewport }) => {

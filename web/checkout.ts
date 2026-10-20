@@ -191,7 +191,7 @@ function render(now: Date = new Date()): void {
   total.textContent = `Total do pedido: ${amount.toBRL()}`;
   shipping.textContent = selected.cost.cents === 0 ? "Free shipping" : `Shipping: ${selected.cost.toBRL()}`;
   shipping.classList.toggle("badge", selected.cost.cents === 0);
-  pay.textContent = `Place order and pay ${amount.toBRL()}`;
+  pay.textContent = `Place order and pay ${amount.toBRL()} with ${METHOD_NAMES[method]} shipping`;
 }
 
 /** Disables the delivery, coupon and points controls once the order is captured, so the total keeps matching the captured order. */
