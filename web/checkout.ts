@@ -148,6 +148,18 @@ function windowOf(quote: ShippingQuote): string {
     : "On the date you choose";
 }
 
+/** Moves the delivery options into ascending price order, leaving them as they are when already in that order so the focused radio is not detached. */
+function orderCheapestFirst(quoted: { option: ShippingMethod; quote: ShippingQuote }[]): void {
+  const fieldset = document.querySelector<HTMLFieldSetElement>(".delivery")!;
+  const labels = [...quoted]
+    .sort((a, b) => a.quote.cost.cents - b.quote.cost.cents)
+    .map(({ option }) => document.querySelector<HTMLInputElement>(`input[name="method"][value="${option}"]`)!.closest("label")!);
+  const current = [...fieldset.querySelectorAll(".option")];
+  if (labels.some((label, index) => label !== current[index])) {
+    fieldset.append(...labels);
+  }
+}
+
 function render(now: Date = new Date()): void {
   const message = dateMessage(now);
   dateInput.min = utcDate(now, 1);
@@ -157,11 +169,12 @@ function render(now: Date = new Date()): void {
   dateInput.setAttribute("aria-invalid", String(message !== ""));
   dateError.textContent = message;
 
-  for (const option of METHODS) {
-    const quote = quoteFor(option, now);
+  const quoted = METHODS.map((option) => ({ option, quote: quoteFor(option, now) }));
+  for (const { option, quote } of quoted) {
     document.querySelector(`#${option}-window`)!.textContent = windowOf(quote);
     document.querySelector(`#${option}-price`)!.textContent = quote.cost.toBRL();
   }
+  orderCheapestFirst(quoted);
 
   const selected = quoteFor(method, now);
   const amount = payable(cart, discount).add(selected.cost);

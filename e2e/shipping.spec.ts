@@ -64,6 +64,11 @@ test("shows each option with its price and delivery window", async ({ page }) =>
   await expect(option(page, "Scheduled").locator(".price")).toHaveText("R$ 5,00");
 });
 
+test("lists the options cheapest first", async ({ page }) => {
+  await expect(page.locator(".delivery .option .option-name")).toHaveText(["Standard", "Scheduled", "Express"]);
+  await expect(option(page, "Standard").locator(".price")).toHaveText("R$ 0,00");
+});
+
 test("each option recomputes the shipping line, total and pay label", async ({ page }) => {
   await option(page, "Express").click();
   await expect(option(page, "Express").getByRole("radio")).toBeChecked();
