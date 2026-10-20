@@ -1,6 +1,6 @@
 import { cartQuantity, cartTotal, cartWeight, payable, type WeightedCartLine } from "../src/cart.js";
 import { type Coupon, discountFor } from "../src/coupon.js";
-import { CENTS_PER_POINT, pointsCoupon, pointsEarned } from "../src/loyalty.js";
+import { pointsCoupon, pointsEarned } from "../src/loyalty.js";
 import { Money } from "../src/money.js";
 import { ORDER_NUMBER_LENGTH, ORDER_NUMBER_PATTERN, orderNumberFrom } from "../src/order-number.js";
 import { type Order, orderTotal } from "../src/report.js";
@@ -53,7 +53,6 @@ interface SavedOrder {
   totalCents: number;
   balanceAfter?: number;
   discountLabel?: string;
-  pointsRedeemed?: number;
 }
 
 /** An unplaced discount as kept under DISCOUNT_KEY: a coupon code, or the points redeemed. */
@@ -224,9 +223,7 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     saved.totalCents < 0 ||
     (saved.balanceAfter !== undefined &&
       (typeof saved.balanceAfter !== "number" || !Number.isInteger(saved.balanceAfter) || saved.balanceAfter < 0)) ||
-    (saved.discountLabel !== undefined && typeof saved.discountLabel !== "string") ||
-    (saved.pointsRedeemed !== undefined &&
-      (!Number.isInteger(saved.pointsRedeemed) || (saved.pointsRedeemed as number) < 0))
+    (saved.discountLabel !== undefined && typeof saved.discountLabel !== "string")
   ) {
     return undefined;
   }
@@ -258,10 +255,7 @@ function showPlaced(saved: SavedOrder): void {
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
   pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
   pointsEarnedLine.hidden = false;
-  if (saved.pointsRedeemed) {
-    discountLine.textContent = `Points redeemed: -${new Money(saved.pointsRedeemed * CENTS_PER_POINT).toBRL()}`;
-    discountLine.hidden = false;
-  } else if (saved.discountLabel) {
+  if (saved.discountLabel) {
     discountLine.textContent = saved.discountLabel;
     discountLine.hidden = false;
   }
@@ -376,7 +370,6 @@ form.addEventListener("submit", (event) => {
     totalCents: orderTotal(order).cents,
     balanceAfter: balance,
     discountLabel: discountLine.hidden ? undefined : (discountLine.textContent ?? undefined),
-    pointsRedeemed: pointsSpent,
   };
   localStorage.setItem(ORDER_KEY, JSON.stringify(saved));
   localStorage.removeItem(DISCOUNT_KEY);
