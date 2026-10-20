@@ -27,11 +27,12 @@ test("shows the order number in the confirmation message", async ({ page }, test
 });
 
 test("keeps the order number in the confirmation after a page reload", async ({ page }) => {
-  const number = await placeOrder(page);
+  await placeOrder(page);
+  const confirmation = (await page.getByRole("status").textContent())!;
 
   await page.reload();
 
-  await expect(page.getByRole("status")).toHaveText(`Order placed: ${number}. You will get an email with the tracking code.`);
+  await expect(page.getByRole("status")).toHaveText(confirmation);
   await expect(page.locator("#pay")).toBeDisabled();
   await expect(page.getByLabel("Standard")).toBeDisabled();
 });

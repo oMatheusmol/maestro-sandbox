@@ -49,6 +49,7 @@ interface SavedOrder {
   number: string;
   method: ShippingMethod;
   deliveryDate?: string;
+  windowEnd?: string;
   costCents: number;
   totalCents: number;
   balanceAfter?: number;
@@ -158,6 +159,22 @@ function windowOf(quote: ShippingQuote): string {
     : "On the date you choose";
 }
 
+/** The last day of the delivery window: the chosen date for scheduled, else the last of the business days counted from the placed UTC date (no holidays). */
+function windowEndOf(quote: ShippingQuote, placedOn: string): string {
+  if (quote.deliveryDate !== undefined) {
+    return quote.deliveryDate;
+  }
+  let day = new Date(`${placedOn}T00:00:00Z`);
+  let counted = 0;
+  while (counted < (quote.businessDays?.max ?? 0)) {
+    day = new Date(day.getTime() + DAY_MS);
+    if (day.getUTCDay() !== 0 && day.getUTCDay() !== 6) {
+      counted += 1;
+    }
+  }
+  return day.toISOString().slice(0, 10);
+}
+
 /** Moves the delivery options into ascending price order, leaving them as they are when already in that order so the focused radio is not detached. */
 function orderCheapestFirst(quoted: { option: ShippingMethod; quote: ShippingQuote }[]): void {
   const fieldset = document.querySelector<HTMLFieldSetElement>(".delivery")!;
@@ -240,6 +257,7 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !ORDER_NUMBER_PATTERN.test(saved.number) ||
     !METHODS.some((option) => option === saved.method) ||
     (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
+    (saved.windowEnd !== undefined && typeof saved.windowEnd !== "string") ||
     !Number.isInteger(saved.costCents) ||
     saved.totalCents === undefined ||
     !Number.isInteger(saved.totalCents) ||
@@ -276,7 +294,8 @@ function showPlaced(saved: SavedOrder): void {
   clearCart.hidden = true;
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
-  placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
+  const windowEnd = saved.windowEnd ? ` Delivery window ends ${saved.windowEnd}.` : "";
+  placed.textContent = `Order placed: ${saved.number}.${windowEnd} You will get an email with the tracking code.`;
   pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
   pointsEarnedLine.hidden = false;
   if (saved.discountLabel) {
@@ -394,13 +413,14 @@ form.addEventListener("submit", (event) => {
   const quote = quoteFor(method, now);
   const delivery = { method, cost: quote.cost, deliveryDate: quote.deliveryDate };
   const number = orderNumberFrom(crypto.getRandomValues(new Uint8Array(ORDER_NUMBER_LENGTH)));
+  const placedOn = utcDate(now, 0);
   const order: Order = {
     id: number,
     lines: cart,
     discount,
     shipping: delivery,
     userId: DEMO_USER_ID,
-    placedOn: utcDate(now, 0),
+    placedOn,
     pointsRedeemed: pointsSpent,
   };
   orderNumber = number;
@@ -411,6 +431,7 @@ form.addEventListener("submit", (event) => {
     number,
     method: delivery.method,
     deliveryDate: delivery.deliveryDate,
+    windowEnd: windowEndOf(quote, placedOn),
     costCents: delivery.cost.cents,
     totalCents: orderTotal(order).cents,
     balanceAfter: balance,

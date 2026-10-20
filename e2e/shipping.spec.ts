@@ -257,3 +257,39 @@ test("fits the delivery controls and pay button in the viewport, with actions af
 
   expect(await photograph(page, testInfo, "checkout-shipping")).toMatch(/checkout-shipping\.png$/);
 });
+
+test("shows the standard window's last business day in the confirmation", async ({ page }, testInfo) => {
+  await fillShipping(page);
+  await pay(page).click();
+
+  await expect(page.getByRole("status")).toContainText("Delivery window ends 2026-10-23.");
+  expect(await photograph(page, testInfo, "checkout-window-end")).toMatch(/checkout-window-end\.png$/);
+});
+
+test("shows the express window's last business day in the confirmation", async ({ page }) => {
+  await option(page, "Express").click();
+  await fillShipping(page);
+  await pay(page).click();
+
+  await expect(page.getByRole("status")).toContainText("Delivery window ends 2026-10-14.");
+});
+
+test("shows the chosen date as the last day of a scheduled order's confirmation", async ({ page }) => {
+  await option(page, "Scheduled").click();
+  await page.getByLabel("Delivery date").fill("2026-10-20");
+  await fillShipping(page);
+  await pay(page).click();
+
+  await expect(page.getByRole("status")).toContainText("Delivery window ends 2026-10-20.");
+});
+
+test("keeps the window's last day in the confirmation after a page reload", async ({ page }) => {
+  await fillShipping(page);
+  await pay(page).click();
+  await expect(page.getByRole("status")).toContainText("Delivery window ends 2026-10-23.");
+
+  await page.reload();
+
+  await expect(page.getByRole("status")).toContainText("Delivery window ends 2026-10-23.");
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
+});
