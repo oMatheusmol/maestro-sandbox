@@ -49,6 +49,7 @@ interface SavedOrder {
   number: string;
   method: ShippingMethod;
   deliveryDate?: string;
+  placedOn?: string;
   costCents: number;
   totalCents: number;
   balanceAfter?: number;
@@ -70,6 +71,10 @@ const form = document.querySelector<HTMLFormElement>("#shipping")!;
 const dateInput = document.querySelector<HTMLInputElement>("#delivery-date")!;
 const dateError = document.querySelector<HTMLParagraphElement>("#date-error")!;
 const placed = document.querySelector<HTMLParagraphElement>("#placed")!;
+const orderDateLine = document.createElement("p");
+orderDateLine.id = "order-date";
+orderDateLine.hidden = true;
+placed.after(orderDateLine);
 const deliveryDetails = document.querySelector<HTMLParagraphElement>("#delivery-details")!;
 const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
@@ -240,6 +245,7 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !ORDER_NUMBER_PATTERN.test(saved.number) ||
     !METHODS.some((option) => option === saved.method) ||
     (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
+    (saved.placedOn !== undefined && typeof saved.placedOn !== "string") ||
     !Number.isInteger(saved.costCents) ||
     saved.totalCents === undefined ||
     !Number.isInteger(saved.totalCents) ||
@@ -277,6 +283,8 @@ function showPlaced(saved: SavedOrder): void {
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
+  orderDateLine.textContent = saved.placedOn ? `Order date: ${saved.placedOn}.` : "";
+  orderDateLine.hidden = saved.placedOn === undefined;
   pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
   pointsEarnedLine.hidden = false;
   if (saved.discountLabel) {
@@ -411,6 +419,7 @@ form.addEventListener("submit", (event) => {
     number,
     method: delivery.method,
     deliveryDate: delivery.deliveryDate,
+    placedOn: order.placedOn,
     costCents: delivery.cost.cents,
     totalCents: orderTotal(order).cents,
     balanceAfter: balance,
