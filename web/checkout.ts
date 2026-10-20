@@ -295,6 +295,7 @@ if (restored) {
   balance = restored.balanceAfter ?? DEMO_POINTS;
   renderPoints();
   render();
+  total.textContent = `Total do pedido: ${new Money(restored.totalCents).toBRL()}`;
   showPlaced(restored);
 } else {
   const pending = pendingDiscountOf(localStorage.getItem(DISCOUNT_KEY));
