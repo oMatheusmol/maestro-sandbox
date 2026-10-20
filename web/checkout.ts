@@ -109,6 +109,9 @@ clearCart.id = "clear-cart";
 clearCart.href = "#";
 clearCart.textContent = "Clear cart";
 itemCount.after(clearCart);
+const averagePrice = document.createElement("p");
+averagePrice.id = "average-price";
+clearCart.after(averagePrice);
 showCartCounts();
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
@@ -122,6 +125,9 @@ function showCartCounts(): void {
   productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
   const quantity = cartQuantity(cart);
   itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+  averagePrice.hidden = quantity === 0;
+  averagePrice.textContent =
+    quantity === 0 ? "" : `Average price per item: ${new Money(Math.round(subtotal.cents / quantity)).toBRL()}`;
 }
 
 /** The UTC calendar date `days` days after `now`. */
