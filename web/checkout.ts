@@ -95,18 +95,31 @@ for (const { name, line } of CART) {
   lines.append(item);
 }
 
-const cart = CART.map((c) => c.line);
-const subtotal = cartTotal(cart);
-const weightKg = cartWeight(cart);
+let cart = CART.map((c) => c.line);
+let subtotal = cartTotal(cart);
+let weightKg = cartWeight(cart);
 const productCount = document.createElement("p");
 productCount.id = "product-count";
-productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
 total.before(productCount);
-const quantity = cartQuantity(cart);
 const itemCount = document.createElement("p");
 itemCount.className = "item-count";
-itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
 total.after(itemCount);
+const clearButton = document.createElement("button");
+clearButton.id = "clear-cart";
+clearButton.type = "button";
+clearButton.textContent = "Clear cart";
+itemCount.after(clearButton);
+
+/** Recomputes the cart figures and the count lines from the cart lines. */
+function renderCart(): void {
+  subtotal = cartTotal(cart);
+  weightKg = cartWeight(cart);
+  productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
+  const quantity = cartQuantity(cart);
+  itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+}
+
+renderCart();
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
@@ -175,7 +188,7 @@ function render(now: Date = new Date()): void {
 function lockAfterCapture(): void {
   document
     .querySelectorAll<HTMLInputElement | HTMLButtonElement>(
-      'input[name="method"], #delivery-date, #coupon input, #coupon button, #redeem-points',
+      'input[name="method"], #delivery-date, #coupon input, #coupon button, #redeem-points, #clear-cart',
     )
     .forEach((control) => {
       control.disabled = true;
@@ -326,6 +339,19 @@ redeemButton.addEventListener("click", () => {
   applyDiscount(pointsCoupon(points, POINTS_EXPIRES_AT));
   pointsSpent = points;
   localStorage.setItem(DISCOUNT_KEY, JSON.stringify({ points }));
+});
+
+clearButton.addEventListener("click", () => {
+  cart = [];
+  lines.replaceChildren();
+  applied = undefined;
+  discount = new Money(0);
+  pointsSpent = 0;
+  discountLine.hidden = true;
+  expiryLine.hidden = true;
+  localStorage.removeItem(DISCOUNT_KEY);
+  renderCart();
+  render();
 });
 
 form.addEventListener("change", () => {
