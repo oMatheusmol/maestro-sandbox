@@ -95,31 +95,40 @@ for (const { name, line } of CART) {
   lines.append(item);
 }
 
-const cart = CART.map((c) => c.line);
-const subtotal = cartTotal(cart);
-const weightKg = cartWeight(cart);
+let cart = CART.map((c) => c.line);
+let subtotal = cartTotal(cart);
+let weightKg = cartWeight(cart);
 const productCount = document.createElement("p");
 productCount.id = "product-count";
-productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
 total.before(productCount);
-const quantity = cartQuantity(cart);
 const itemCount = document.createElement("p");
 itemCount.className = "item-count";
-itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
 total.after(itemCount);
+const clearCart = document.createElement("a");
+clearCart.id = "clear-cart";
+clearCart.href = "#";
+clearCart.textContent = "Clear cart";
+itemCount.after(clearCart);
 const averagePrice = document.createElement("p");
 averagePrice.id = "average-price";
-averagePrice.hidden = quantity === 0;
-if (quantity > 0) {
-  averagePrice.textContent = `Average price per item: ${new Money(Math.round(subtotal.cents / quantity)).toBRL()}`;
-}
-itemCount.after(averagePrice);
+clearCart.after(averagePrice);
+showCartCounts();
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
 let discount = new Money(0);
 let orderNumber: string | undefined;
 let balance = DEMO_POINTS;
 let pointsSpent = 0;
+
+/** Shows the product count and the item count of the cart. */
+function showCartCounts(): void {
+  productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
+  const quantity = cartQuantity(cart);
+  itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+  averagePrice.hidden = quantity === 0;
+  averagePrice.textContent =
+    quantity === 0 ? "" : `Average price per item: ${new Money(Math.round(subtotal.cents / quantity)).toBRL()}`;
+}
 
 /** The UTC calendar date `days` days after `now`. */
 function utcDate(now: Date, days: number): string {
@@ -257,6 +266,7 @@ function pendingDiscountOf(raw: string | null): PendingDiscount | undefined {
 /** Shows a placed order: its number in the confirmation and its delivery details, the discount it came from, and locks the controls so the captured order stays as it was. */
 function showPlaced(saved: SavedOrder): void {
   pay.disabled = true;
+  clearCart.hidden = true;
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
@@ -333,6 +343,26 @@ redeemButton.addEventListener("click", () => {
   applyDiscount(pointsCoupon(points, POINTS_EXPIRES_AT));
   pointsSpent = points;
   localStorage.setItem(DISCOUNT_KEY, JSON.stringify({ points }));
+});
+
+clearCart.addEventListener("click", (event) => {
+  event.preventDefault();
+  if (orderNumber) {
+    return;
+  }
+  cart = [];
+  subtotal = cartTotal(cart);
+  weightKg = cartWeight(cart);
+  lines.replaceChildren();
+  applied = undefined;
+  discount = new Money(0);
+  pointsSpent = 0;
+  discountLine.hidden = true;
+  expiryLine.hidden = true;
+  localStorage.removeItem(DISCOUNT_KEY);
+  showCartCounts();
+  pay.disabled = true;
+  render();
 });
 
 form.addEventListener("change", () => {
