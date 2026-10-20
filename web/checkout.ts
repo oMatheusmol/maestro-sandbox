@@ -41,6 +41,9 @@ const ORDER_KEY = "sandbox-shop:placed-order";
 /** Where this browser keeps an unplaced discount, so a reload applies it again. */
 const DISCOUNT_KEY = "sandbox-shop:pending-discount";
 
+/** Where this browser keeps the chosen shipping method, so a reload shows the same option. */
+const SHIPPING_KEY = "sandbox-shop:shipping-method";
+
 /**
  * The captured fields of a placed order, the points balance after it, and the discount line it showed, as kept under ORDER_KEY.
  * Records saved before the balance was kept have no balanceAfter; they restore with the demo balance.
@@ -307,6 +310,14 @@ function restoreDiscount(pending: PendingDiscount): void {
   }
 }
 
+const savedMethod = METHODS.find((option) => option === localStorage.getItem(SHIPPING_KEY));
+if (savedMethod) {
+  method = savedMethod;
+  document.querySelector<HTMLInputElement>(`input[name="method"][value="${method}"]`)!.checked = true;
+} else {
+  localStorage.removeItem(SHIPPING_KEY);
+}
+
 render();
 renderPoints();
 
@@ -376,6 +387,7 @@ clearCart.addEventListener("click", (event) => {
 
 form.addEventListener("change", () => {
   method = METHODS.find((option) => option === new FormData(form).get("method")) ?? method;
+  localStorage.setItem(SHIPPING_KEY, method);
   render();
 });
 
