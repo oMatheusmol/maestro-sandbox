@@ -58,6 +58,28 @@ test("refuses an unknown coupon code", async ({ page }) => {
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
 });
 
+test("moves focus to the coupon field when an unknown code is refused", async ({ page }, testInfo) => {
+  await page.goto("/");
+
+  await page.getByLabel("Coupon code").fill("NOPE");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await expect(page.getByRole("alert")).toHaveText("Unknown coupon code: NOPE");
+  await expect(page.getByLabel("Coupon code")).toBeFocused();
+  expect(await photograph(page, testInfo, "checkout-coupon-unknown-focus")).toMatch(/checkout-coupon-unknown-focus\.png$/);
+});
+
+test("moves focus to the coupon field when an expired coupon is refused", async ({ page }, testInfo) => {
+  await page.goto("/");
+
+  await page.getByLabel("Coupon code").fill("OLD5");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await expect(page.getByRole("alert")).toHaveText("coupon OLD5 expired on 2020-01-01T00:00:00.000Z");
+  await expect(page.getByLabel("Coupon code")).toBeFocused();
+  expect(await photograph(page, testInfo, "checkout-coupon-expired-focus")).toMatch(/checkout-coupon-expired-focus\.png$/);
+});
+
 test("takes a percentage coupon off the merchandise before express shipping is added", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("Coupon code").fill("WELCOME10");
