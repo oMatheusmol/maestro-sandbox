@@ -48,8 +48,9 @@ test("Continue shopping clears the confirmation and empties the cart without rel
   await photograph(page, testInfo, "checkout-after-continue-shopping");
 });
 
-test("a reload after Continue shopping shows a fresh checkout with the full cart", async ({ page }) => {
+test("a reload after Continue shopping shows a fresh checkout with the full cart and the points balance", async ({ page }) => {
   await placeOrder(page);
+  const balance = await page.locator("#points-balance").textContent();
   await page.getByRole("link", { name: "Continue shopping" }).click();
 
   await page.reload();
@@ -57,4 +58,5 @@ test("a reload after Continue shopping shows a fresh checkout with the full cart
   await expect(page.getByRole("status")).toBeEmpty();
   await expect(page.locator("#lines li")).toHaveCount(3);
   await expect(page.locator("#pay")).toBeEnabled();
+  await expect(page.locator("#points-balance")).toHaveText(balance!);
 });

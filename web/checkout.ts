@@ -30,13 +30,16 @@ const COUPONS: Coupon[] = [
   { code: "OLD5", kind: "fixed", amount: Money.fromBRL("5,00"), expiresAt: new Date("2020-01-01T00:00:00Z") },
 ];
 
-/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance starts at DEMO_POINTS and, once an order is placed, is kept in this browser with that order. */
+/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance starts at DEMO_POINTS and, once an order is placed, is kept in this browser under BALANCE_KEY. */
 const DEMO_USER_ID = "demo-user";
 const DEMO_POINTS = 1000;
 const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
 
 /** Where this browser keeps the placed order, so a reload shows it again with the same order number. */
 const ORDER_KEY = "sandbox-shop:placed-order";
+
+/** Where this browser keeps the points balance after the last placed order, so it outlives the order record. */
+const BALANCE_KEY = "sandbox-shop:points-balance";
 
 /** Where this browser keeps an unplaced discount, so a reload applies it again. */
 const DISCOUNT_KEY = "sandbox-shop:pending-discount";
@@ -244,6 +247,12 @@ function applyDiscount(coupon: Coupon): void {
   render();
 }
 
+/** The points balance kept under BALANCE_KEY, or undefined when none is kept or the stored value is not a whole number of points. */
+function balanceOf(raw: string | null): number | undefined {
+  const points = Number(raw);
+  return raw !== null && Number.isInteger(points) && points >= 0 ? points : undefined;
+}
+
 /** The placed order kept under ORDER_KEY, or undefined when none is kept or the stored value is malformed. */
 function savedOrderOf(raw: string | null): SavedOrder | undefined {
   let saved: Partial<SavedOrder> | null;
@@ -325,6 +334,7 @@ function restoreDiscount(pending: PendingDiscount): void {
   }
 }
 
+balance = balanceOf(localStorage.getItem(BALANCE_KEY)) ?? DEMO_POINTS;
 render();
 renderPoints();
 
@@ -427,6 +437,7 @@ form.addEventListener("submit", (event) => {
   orderNumber = number;
   const earned = pointsEarned(orderTotal(order));
   balance = balance - pointsSpent + earned;
+  localStorage.setItem(BALANCE_KEY, String(balance));
   renderPoints();
   const saved: SavedOrder = {
     number,
