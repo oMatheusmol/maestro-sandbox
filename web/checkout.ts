@@ -70,6 +70,11 @@ const form = document.querySelector<HTMLFormElement>("#shipping")!;
 const dateInput = document.querySelector<HTMLInputElement>("#delivery-date")!;
 const dateError = document.querySelector<HTMLParagraphElement>("#date-error")!;
 const placed = document.querySelector<HTMLParagraphElement>("#placed")!;
+const placedTitle = document.createElement("h2");
+placedTitle.id = "placed-title";
+placedTitle.textContent = "Order placed!";
+placedTitle.hidden = true;
+placed.before(placedTitle);
 const deliveryDetails = document.querySelector<HTMLParagraphElement>("#delivery-details")!;
 const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
@@ -276,7 +281,8 @@ function showPlaced(saved: SavedOrder): void {
   clearCart.hidden = true;
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
-  placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
+  placedTitle.hidden = false;
+  placed.textContent =`Order placed: ${saved.number}. You will get an email with the tracking code.`;
   pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
   pointsEarnedLine.hidden = false;
   if (saved.discountLabel) {
