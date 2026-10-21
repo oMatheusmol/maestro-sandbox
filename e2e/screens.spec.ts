@@ -34,6 +34,27 @@ test("menu uses Arial when navigating between screens", async ({ page }, testInf
   expect(await photograph(page, testInfo, "checkout-return")).toMatch(/checkout-return\.png$/);
 });
 
+test("the header shows a Cart link and the cart's item count", async ({ page }, testInfo) => {
+  await page.goto("/");
+
+  const cart = page.getByRole("navigation").getByRole("link", { name: "Cart", exact: true });
+  await expect(cart).toBeVisible();
+  await expect(cart).toHaveAttribute("href", /#cart-title$/);
+  await expect(page.locator("#header-cart-count")).toHaveText("4");
+  expect(await photograph(page, testInfo, "checkout-header-count")).toMatch(/checkout-header-count\.png$/);
+});
+
+test("the header count hides once Clear cart empties the cart", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await expect(page.locator("#header-cart-count")).toHaveText("4");
+
+  await page.getByRole("link", { name: "Clear cart", exact: true }).click();
+
+  await expect(page.locator("#header-cart-count")).toBeHidden();
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Cart", exact: true })).toBeVisible();
+  expect(await photograph(page, testInfo, "checkout-header-cleared")).toMatch(/checkout-header-cleared\.png$/);
+});
+
 async function expectReadableText(elements: Locator): Promise<void> {
   const contrasts = await elements.evaluateAll((nodes) => {
     const rgb = (color: string) => color.match(/[\d.]+/g)!.map(Number);

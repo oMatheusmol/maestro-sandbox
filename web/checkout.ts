@@ -83,6 +83,7 @@ discountLine.after(expiryLine);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
+const headerCartCount = document.querySelector<HTMLSpanElement>("#header-cart-count")!;
 
 for (const { name, line } of CART) {
   const item = document.createElement("li");
@@ -117,11 +118,13 @@ let orderNumber: string | undefined;
 let balance = DEMO_POINTS;
 let pointsSpent = 0;
 
-/** Shows the product count and the item count of the cart. */
+/** Shows the product count and the item count of the cart, and the item count in the header, which is hidden when the cart is empty. */
 function showCartCounts(): void {
   productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
   const quantity = cartQuantity(cart);
   itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+  headerCartCount.textContent = String(quantity);
+  headerCartCount.hidden = quantity === 0;
 }
 
 /** The UTC calendar date `days` days after `now`. */
