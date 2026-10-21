@@ -62,6 +62,7 @@ const METHODS: ShippingMethod[] = ["standard", "express", "scheduled"];
 const METHOD_NAMES: Record<ShippingMethod, string> = { standard: "Standard", express: "Express", scheduled: "Scheduled" };
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const heading = document.querySelector<HTMLHeadingElement>("#heading")!;
 const lines = document.querySelector<HTMLUListElement>("#lines")!;
 const total = document.querySelector<HTMLParagraphElement>("#total")!;
 const shipping = document.querySelector<HTMLParagraphElement>("#free-shipping")!;
@@ -117,10 +118,11 @@ let orderNumber: string | undefined;
 let balance = DEMO_POINTS;
 let pointsSpent = 0;
 
-/** Shows the product count and the item count of the cart. */
+/** Shows the product count, the item count of the cart, and the item count in the heading. */
 function showCartCounts(): void {
   productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
   const quantity = cartQuantity(cart);
+  heading.textContent = `Checkout (${quantity})`;
   itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
 }
 
