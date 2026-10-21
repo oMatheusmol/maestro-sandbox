@@ -83,6 +83,13 @@ discountLine.after(expiryLine);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
+const printButton = document.createElement("button");
+printButton.id = "print-order";
+printButton.type = "button";
+printButton.textContent = "Print order";
+printButton.hidden = true;
+deliveryDetails.after(printButton);
+printButton.addEventListener("click", () => window.print());
 
 for (const { name, line } of CART) {
   const item = document.createElement("li");
@@ -286,6 +293,7 @@ function showPlaced(saved: SavedOrder): void {
   const date = saved.deliveryDate ? ` for ${saved.deliveryDate}` : "";
   deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[saved.method]}${date}. Shipping: ${new Money(saved.costCents).toBRL()}. Total: ${new Money(saved.totalCents).toBRL()}.`;
   deliveryDetails.hidden = false;
+  printButton.hidden = false;
 }
 
 /** Applies an unplaced discount kept from before the reload; a refused or unknown one is dropped from storage. */
