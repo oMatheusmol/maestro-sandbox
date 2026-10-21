@@ -30,7 +30,7 @@ const COUPONS: Coupon[] = [
   { code: "OLD5", kind: "fixed", amount: Money.fromBRL("5,00"), expiresAt: new Date("2020-01-01T00:00:00Z") },
 ];
 
-/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance starts at DEMO_POINTS and, once an order is placed, is kept in this browser with that order. */
+/** Made-up demo account and balance for loyalty points; checkout has no sign-in, so the balance starts at DEMO_POINTS and, once an order is placed, is kept in this browser under BALANCE_KEY. */
 const DEMO_USER_ID = "demo-user";
 const DEMO_POINTS = 1000;
 const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
@@ -38,8 +38,14 @@ const POINTS_EXPIRES_AT = new Date("2099-12-31T23:59:59Z");
 /** Where this browser keeps the placed order, so a reload shows it again with the same order number. */
 const ORDER_KEY = "sandbox-shop:placed-order";
 
+/** Where this browser keeps the points balance after the last placed order, so it outlives the order record. */
+const BALANCE_KEY = "sandbox-shop:points-balance";
+
 /** Where this browser keeps an unplaced discount, so a reload applies it again. */
 const DISCOUNT_KEY = "sandbox-shop:pending-discount";
+
+/** The delivery, date, coupon and points controls that a placed order locks, and that Continue shopping unlocks. */
+const CAPTURED_CONTROLS = 'input[name="method"], #delivery-date, #coupon input, #coupon button, #redeem-points';
 
 /**
  * The captured fields of a placed order, the points balance after it, and the discount line it showed, as kept under ORDER_KEY.
@@ -70,6 +76,7 @@ const form = document.querySelector<HTMLFormElement>("#shipping")!;
 const dateInput = document.querySelector<HTMLInputElement>("#delivery-date")!;
 const dateError = document.querySelector<HTMLParagraphElement>("#date-error")!;
 const placed = document.querySelector<HTMLParagraphElement>("#placed")!;
+const continueShopping = document.querySelector<HTMLAnchorElement>("#continue-shopping")!;
 const deliveryDetails = document.querySelector<HTMLParagraphElement>("#delivery-details")!;
 const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
@@ -122,6 +129,23 @@ function showCartCounts(): void {
   productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
   const quantity = cartQuantity(cart);
   itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+}
+
+/** Empties the cart and the discount on it, and disables Place order until products are added again. */
+function emptyCart(): void {
+  cart = [];
+  subtotal = cartTotal(cart);
+  weightKg = cartWeight(cart);
+  lines.replaceChildren();
+  applied = undefined;
+  discount = new Money(0);
+  pointsSpent = 0;
+  discountLine.hidden = true;
+  expiryLine.hidden = true;
+  localStorage.removeItem(DISCOUNT_KEY);
+  showCartCounts();
+  pay.disabled = true;
+  render();
 }
 
 /** The UTC calendar date `days` days after `now`. */
@@ -196,13 +220,9 @@ function render(now: Date = new Date()): void {
 
 /** Disables the delivery, coupon and points controls once the order is captured, so the total keeps matching the captured order. */
 function lockAfterCapture(): void {
-  document
-    .querySelectorAll<HTMLInputElement | HTMLButtonElement>(
-      'input[name="method"], #delivery-date, #coupon input, #coupon button, #redeem-points',
-    )
-    .forEach((control) => {
-      control.disabled = true;
-    });
+  document.querySelectorAll<HTMLInputElement | HTMLButtonElement>(CAPTURED_CONTROLS).forEach((control) => {
+    control.disabled = true;
+  });
 }
 
 /** Shows the points balance; redeeming is off when nothing is left to redeem. */
@@ -225,6 +245,12 @@ function applyDiscount(coupon: Coupon): void {
   expiryLine.textContent = `Expires ${coupon.expiresAt.toISOString().slice(0, 10)}`;
   expiryLine.hidden = false;
   render();
+}
+
+/** The points balance kept under BALANCE_KEY, or undefined when none is kept or the stored value is not a whole number of points. */
+function balanceOf(raw: string | null): number | undefined {
+  const points = Number(raw);
+  return raw !== null && Number.isInteger(points) && points >= 0 ? points : undefined;
 }
 
 /** The placed order kept under ORDER_KEY, or undefined when none is kept or the stored value is malformed. */
@@ -277,6 +303,7 @@ function showPlaced(saved: SavedOrder): void {
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
+  continueShopping.hidden = false;
   pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
   pointsEarnedLine.hidden = false;
   if (saved.discountLabel) {
@@ -307,6 +334,7 @@ function restoreDiscount(pending: PendingDiscount): void {
   }
 }
 
+balance = balanceOf(localStorage.getItem(BALANCE_KEY)) ?? DEMO_POINTS;
 render();
 renderPoints();
 
@@ -359,19 +387,22 @@ clearCart.addEventListener("click", (event) => {
   if (orderNumber) {
     return;
   }
-  cart = [];
-  subtotal = cartTotal(cart);
-  weightKg = cartWeight(cart);
-  lines.replaceChildren();
-  applied = undefined;
-  discount = new Money(0);
-  pointsSpent = 0;
-  discountLine.hidden = true;
-  expiryLine.hidden = true;
-  localStorage.removeItem(DISCOUNT_KEY);
-  showCartCounts();
-  pay.disabled = true;
-  render();
+  emptyCart();
+});
+
+continueShopping.addEventListener("click", (event) => {
+  event.preventDefault();
+  localStorage.removeItem(ORDER_KEY);
+  orderNumber = undefined;
+  placed.textContent = "";
+  continueShopping.hidden = true;
+  deliveryDetails.hidden = true;
+  pointsEarnedLine.hidden = true;
+  document.querySelectorAll<HTMLInputElement | HTMLButtonElement>(CAPTURED_CONTROLS).forEach((control) => {
+    control.disabled = false;
+  });
+  emptyCart();
+  renderPoints();
 });
 
 form.addEventListener("change", () => {
@@ -406,6 +437,7 @@ form.addEventListener("submit", (event) => {
   orderNumber = number;
   const earned = pointsEarned(orderTotal(order));
   balance = balance - pointsSpent + earned;
+  localStorage.setItem(BALANCE_KEY, String(balance));
   renderPoints();
   const saved: SavedOrder = {
     number,
