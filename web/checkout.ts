@@ -117,11 +117,12 @@ let orderNumber: string | undefined;
 let balance = DEMO_POINTS;
 let pointsSpent = 0;
 
-/** Shows the product count and the item count of the cart. */
+/** Shows the product count and the item count of the cart, and hides the coupon box when the cart is empty. */
 function showCartCounts(): void {
   productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
   const quantity = cartQuantity(cart);
   itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+  couponForm.style.display = cart.length === 0 ? "none" : "";
 }
 
 /** The UTC calendar date `days` days after `now`. */

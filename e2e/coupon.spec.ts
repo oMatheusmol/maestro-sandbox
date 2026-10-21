@@ -1,6 +1,22 @@
 import { expect, test } from "@playwright/test";
 import { photograph } from "./screens.js";
 
+test("shows the coupon box while the cart has items", async ({ page }, testInfo) => {
+  await page.goto("/");
+
+  await expect(page.locator("#coupon")).toBeVisible();
+  expect(await photograph(page, testInfo, "checkout-coupon-with-items")).toMatch(/checkout-coupon-with-items\.png$/);
+});
+
+test("hides the coupon box once the cart is cleared", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Clear cart", exact: true }).click();
+
+  await expect(page.locator("#lines li")).toHaveCount(0);
+  await expect(page.locator("#coupon")).toBeHidden();
+  expect(await photograph(page, testInfo, "checkout-coupon-empty-cart")).toMatch(/checkout-coupon-empty-cart\.png$/);
+});
+
 test("applies a percentage coupon to the total and the pay button", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
