@@ -16,7 +16,7 @@ test("menu uses Arial when navigating between screens", async ({ page }, testInf
   const checkout = menu.getByRole("link", { name: "Checkout", exact: true });
   const voiceNote = menu.getByRole("link", { name: "Voice note", exact: true });
 
-  await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Checkout \(\d+\)$/ })).toBeVisible();
   await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
   await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
   expect(await photograph(page, testInfo, "checkout-menu")).toMatch(/checkout-menu\.png$/);
@@ -28,7 +28,7 @@ test("menu uses Arial when navigating between screens", async ({ page }, testInf
   expect(await photograph(page, testInfo, "recorder-menu")).toMatch(/recorder-menu\.png$/);
 
   await checkout.click();
-  await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Checkout \(\d+\)$/ })).toBeVisible();
   await expect(checkout).toHaveCSS("font-family", "Arial, sans-serif");
   await expect(voiceNote).toHaveCSS("font-family", "Arial, sans-serif");
   expect(await photograph(page, testInfo, "checkout-return")).toMatch(/checkout-return\.png$/);
@@ -91,7 +91,7 @@ test("keeps text readable on dark green pages and white cards", async ({ page, c
 
 test("keeps the shared page background dark green across navigation", async ({ page }, testInfo) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Checkout \(\d+\)$/ })).toBeVisible();
   await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
   expect(await photograph(page, testInfo, "checkout-background")).toMatch(/checkout-background\.png$/);
 
@@ -101,7 +101,7 @@ test("keeps the shared page background dark green across navigation", async ({ p
   expect(await photograph(page, testInfo, "recorder-background")).toMatch(/recorder-background\.png$/);
 
   await page.getByRole("link", { name: "Checkout", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Checkout", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Checkout \(\d+\)$/ })).toBeVisible();
   await expect.soft(page.locator("html")).toHaveCSS("background-color", "rgb(20, 83, 45)");
 });
 
