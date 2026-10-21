@@ -41,6 +41,9 @@ const ORDER_KEY = "sandbox-shop:placed-order";
 /** Where this browser keeps an unplaced discount, so a reload applies it again. */
 const DISCOUNT_KEY = "sandbox-shop:pending-discount";
 
+/** The delivery, date, coupon and points controls that a placed order locks, and that Continue shopping unlocks. */
+const CAPTURED_CONTROLS = 'input[name="method"], #delivery-date, #coupon input, #coupon button, #redeem-points';
+
 /**
  * The captured fields of a placed order, the points balance after it, and the discount line it showed, as kept under ORDER_KEY.
  * Records saved before the balance was kept have no balanceAfter; they restore with the demo balance.
@@ -70,6 +73,7 @@ const form = document.querySelector<HTMLFormElement>("#shipping")!;
 const dateInput = document.querySelector<HTMLInputElement>("#delivery-date")!;
 const dateError = document.querySelector<HTMLParagraphElement>("#date-error")!;
 const placed = document.querySelector<HTMLParagraphElement>("#placed")!;
+const continueShopping = document.querySelector<HTMLAnchorElement>("#continue-shopping")!;
 const deliveryDetails = document.querySelector<HTMLParagraphElement>("#delivery-details")!;
 const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
@@ -122,6 +126,23 @@ function showCartCounts(): void {
   productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
   const quantity = cartQuantity(cart);
   itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+}
+
+/** Empties the cart and the discount on it, and disables Place order until products are added again. */
+function emptyCart(): void {
+  cart = [];
+  subtotal = cartTotal(cart);
+  weightKg = cartWeight(cart);
+  lines.replaceChildren();
+  applied = undefined;
+  discount = new Money(0);
+  pointsSpent = 0;
+  discountLine.hidden = true;
+  expiryLine.hidden = true;
+  localStorage.removeItem(DISCOUNT_KEY);
+  showCartCounts();
+  pay.disabled = true;
+  render();
 }
 
 /** The UTC calendar date `days` days after `now`. */
@@ -196,13 +217,9 @@ function render(now: Date = new Date()): void {
 
 /** Disables the delivery, coupon and points controls once the order is captured, so the total keeps matching the captured order. */
 function lockAfterCapture(): void {
-  document
-    .querySelectorAll<HTMLInputElement | HTMLButtonElement>(
-      'input[name="method"], #delivery-date, #coupon input, #coupon button, #redeem-points',
-    )
-    .forEach((control) => {
-      control.disabled = true;
-    });
+  document.querySelectorAll<HTMLInputElement | HTMLButtonElement>(CAPTURED_CONTROLS).forEach((control) => {
+    control.disabled = true;
+  });
 }
 
 /** Shows the points balance; redeeming is off when nothing is left to redeem. */
@@ -277,6 +294,7 @@ function showPlaced(saved: SavedOrder): void {
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
+  continueShopping.hidden = false;
   pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
   pointsEarnedLine.hidden = false;
   if (saved.discountLabel) {
@@ -359,19 +377,22 @@ clearCart.addEventListener("click", (event) => {
   if (orderNumber) {
     return;
   }
-  cart = [];
-  subtotal = cartTotal(cart);
-  weightKg = cartWeight(cart);
-  lines.replaceChildren();
-  applied = undefined;
-  discount = new Money(0);
-  pointsSpent = 0;
-  discountLine.hidden = true;
-  expiryLine.hidden = true;
-  localStorage.removeItem(DISCOUNT_KEY);
-  showCartCounts();
-  pay.disabled = true;
-  render();
+  emptyCart();
+});
+
+continueShopping.addEventListener("click", (event) => {
+  event.preventDefault();
+  localStorage.removeItem(ORDER_KEY);
+  orderNumber = undefined;
+  placed.textContent = "";
+  continueShopping.hidden = true;
+  deliveryDetails.hidden = true;
+  pointsEarnedLine.hidden = true;
+  document.querySelectorAll<HTMLInputElement | HTMLButtonElement>(CAPTURED_CONTROLS).forEach((control) => {
+    control.disabled = false;
+  });
+  emptyCart();
+  renderPoints();
 });
 
 form.addEventListener("change", () => {
