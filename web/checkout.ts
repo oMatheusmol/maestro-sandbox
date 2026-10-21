@@ -80,6 +80,10 @@ expiryLine.id = "coupon-expiry";
 expiryLine.className = "discount";
 expiryLine.hidden = true;
 discountLine.after(expiryLine);
+const placedDate = document.createElement("p");
+placedDate.id = "placed-date";
+placedDate.hidden = true;
+placed.after(placedDate);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
@@ -419,4 +423,6 @@ form.addEventListener("submit", (event) => {
   localStorage.setItem(ORDER_KEY, JSON.stringify(saved));
   localStorage.removeItem(DISCOUNT_KEY);
   showPlaced(saved);
+  placedDate.textContent = `Order date: ${order.placedOn}`;
+  placedDate.hidden = false;
 });
