@@ -270,6 +270,13 @@ h2 {
   margin: 8px 0 0;
 }
 
+.site-footer {
+  padding: 16px;
+  font-size: 14px;
+  color: #ffffff;
+  text-align: center;
+}
+
 .recorder {
   color: var(--fg);
   display: grid;
