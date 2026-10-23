@@ -48,6 +48,14 @@ test("refuses an expired coupon and leaves the total unchanged", async ({ page }
   await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.128,70");
 });
 
+test("caps the coupon code at 20 characters", async ({ page }, testInfo) => {
+  await page.goto("/");
+
+  await page.getByLabel("Coupon code").pressSequentially("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  await expect(page.getByLabel("Coupon code")).toHaveValue("ABCDEFGHIJKLMNOPQRST");
+  expect(await photograph(page, testInfo, "checkout-coupon-capped")).toMatch(/checkout-coupon-capped\.png$/);
+});
+
 test("refuses an unknown coupon code", async ({ page }) => {
   await page.goto("/");
 
