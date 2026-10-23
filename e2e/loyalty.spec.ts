@@ -60,7 +60,7 @@ test("applying a coupon code after redeeming removes the points discount", async
 
   await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.015,83");
-  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.015,83");
+  await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.015,83 (Standard)");
 });
 
 test("placing an order shows the points it earned and the reduced balance", async ({ page }, testInfo) => {
