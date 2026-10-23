@@ -109,6 +109,10 @@ clearCart.id = "clear-cart";
 clearCart.href = "#";
 clearCart.textContent = "Clear cart";
 itemCount.after(clearCart);
+const emptyCart = document.createElement("p");
+emptyCart.id = "empty-cart";
+emptyCart.textContent = "Your cart is empty";
+lines.after(emptyCart);
 showCartCounts();
 let method: ShippingMethod = "standard";
 let applied: Coupon | undefined;
@@ -122,6 +126,7 @@ function showCartCounts(): void {
   productCount.textContent = `Products in cart: ${new Set(cart.map((line) => line.productCode)).size}`;
   const quantity = cartQuantity(cart);
   itemCount.textContent = `${quantity} ${quantity === 1 ? "item" : "items"}`;
+  emptyCart.hidden = quantity > 0;
 }
 
 /** The UTC calendar date `days` days after `now`. */
