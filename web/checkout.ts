@@ -49,6 +49,7 @@ interface SavedOrder {
   number: string;
   method: ShippingMethod;
   deliveryDate?: string;
+  placedOn?: string;
   costCents: number;
   totalCents: number;
   balanceAfter?: number;
@@ -70,6 +71,11 @@ const form = document.querySelector<HTMLFormElement>("#shipping")!;
 const dateInput = document.querySelector<HTMLInputElement>("#delivery-date")!;
 const dateError = document.querySelector<HTMLParagraphElement>("#date-error")!;
 const placed = document.querySelector<HTMLParagraphElement>("#placed")!;
+const orderDateLine = document.createElement("p");
+orderDateLine.id = "order-date";
+orderDateLine.className = "captured";
+orderDateLine.hidden = true;
+placed.after(orderDateLine);
 const deliveryDetails = document.querySelector<HTMLParagraphElement>("#delivery-details")!;
 const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
 const couponInput = document.querySelector<HTMLInputElement>("#coupon-code")!;
@@ -240,6 +246,7 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !ORDER_NUMBER_PATTERN.test(saved.number) ||
     !METHODS.some((option) => option === saved.method) ||
     (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
+    (saved.placedOn !== undefined && (typeof saved.placedOn !== "string" || !isCalendarDate(saved.placedOn))) ||
     !Number.isInteger(saved.costCents) ||
     saved.totalCents === undefined ||
     !Number.isInteger(saved.totalCents) ||
@@ -286,6 +293,8 @@ function showPlaced(saved: SavedOrder): void {
   const date = saved.deliveryDate ? ` for ${saved.deliveryDate}` : "";
   deliveryDetails.textContent = `Delivery: ${METHOD_NAMES[saved.method]}${date}. Shipping: ${new Money(saved.costCents).toBRL()}. Total: ${new Money(saved.totalCents).toBRL()}.`;
   deliveryDetails.hidden = false;
+  orderDateLine.textContent = `Order date: ${saved.placedOn}.`;
+  orderDateLine.hidden = saved.placedOn === undefined;
 }
 
 /** Applies an unplaced discount kept from before the reload; a refused or unknown one is dropped from storage. */
@@ -411,6 +420,7 @@ form.addEventListener("submit", (event) => {
     number,
     method: delivery.method,
     deliveryDate: delivery.deliveryDate,
+    placedOn: order.placedOn,
     costCents: delivery.cost.cents,
     totalCents: orderTotal(order).cents,
     balanceAfter: balance,
