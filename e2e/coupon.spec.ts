@@ -15,6 +15,21 @@ test("applies a percentage coupon to the total and the pay button", async ({ pag
   await expect(page.locator("#pay")).toHaveText("Place order and pay R$ 1.015,83");
 });
 
+test("accepts the same coupon in upper, lower and mixed case", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
+
+  for (const code of ["WELCOME10", "welcome10", "Welcome10"]) {
+    await page.getByLabel("Coupon code").fill(code);
+    await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+    await expect(page.locator("#discount")).toHaveText("Coupon WELCOME10: -R$ 112,87");
+    await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.015,83");
+    await expect(page.locator("#coupon-error")).toBeEmpty();
+  }
+  expect(await photograph(page, testInfo, "checkout-coupon-mixed-case")).toMatch(/checkout-coupon-mixed-case\.png$/);
+});
+
 test("shows the expiry date of the applied coupon", async ({ page }, testInfo) => {
   await page.goto("/");
 
