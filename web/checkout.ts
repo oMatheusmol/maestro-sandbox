@@ -69,6 +69,9 @@ const pay = document.querySelector<HTMLButtonElement>("#pay")!;
 const form = document.querySelector<HTMLFormElement>("#shipping")!;
 const dateInput = document.querySelector<HTMLInputElement>("#delivery-date")!;
 const dateError = document.querySelector<HTMLParagraphElement>("#date-error")!;
+const dateWarning = document.createElement("p");
+dateWarning.id = "date-warning";
+dateError.after(dateWarning);
 const placed = document.querySelector<HTMLParagraphElement>("#placed")!;
 const deliveryDetails = document.querySelector<HTMLParagraphElement>("#delivery-details")!;
 const couponForm = document.querySelector<HTMLFormElement>("#coupon")!;
@@ -151,6 +154,16 @@ function dateMessage(now: Date): string {
   return dateInput.value === "" ? "Choose a delivery date." : "Choose a date after today (UTC).";
 }
 
+/** The notice for a typed scheduled date that falls on a Saturday or Sunday (UTC), empty otherwise. */
+function weekendWarning(now: Date): string {
+  const typed = acceptedDate(now);
+  if (method !== "scheduled" || orderNumber !== undefined || typed === undefined) {
+    return "";
+  }
+  const day = new Date(`${typed}T00:00:00Z`).getUTCDay();
+  return day === 0 || day === 6 ? "This date falls on a weekend." : "";
+}
+
 /** The delivery estimate shown on an option: business days, or the chosen date for scheduled. */
 function windowOf(quote: ShippingQuote): string {
   return quote.businessDays
@@ -178,6 +191,7 @@ function render(now: Date = new Date()): void {
   dateInput.setCustomValidity(message);
   dateInput.setAttribute("aria-invalid", String(message !== ""));
   dateError.textContent = message;
+  dateWarning.textContent = weekendWarning(now);
 
   const quoted = METHODS.map((option) => ({ option, quote: quoteFor(option, now) }));
   for (const { option, quote } of quoted) {
@@ -404,6 +418,7 @@ form.addEventListener("submit", (event) => {
     pointsRedeemed: pointsSpent,
   };
   orderNumber = number;
+  dateWarning.textContent = "";
   const earned = pointsEarned(orderTotal(order));
   balance = balance - pointsSpent + earned;
   renderPoints();
