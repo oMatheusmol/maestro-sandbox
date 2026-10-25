@@ -26,10 +26,11 @@ test("shows the order number in the confirmation message", async ({ page }, test
   await photograph(page, testInfo, "checkout-order-number");
 });
 
-test("shows the order date in the confirmation message", async ({ page }) => {
+test("shows the order date in the confirmation message", async ({ page }, testInfo) => {
   const today = new Date().toISOString().slice(0, 10);
   await placeOrder(page);
   await expect(page.locator("#order-date")).toHaveText(`Order date: ${today}`);
+  await photograph(page, testInfo, "checkout-order-date");
 });
 
 test("keeps the order date in the confirmation after a page reload", async ({ page }) => {
