@@ -26,6 +26,31 @@ test("shows the order number in the confirmation message", async ({ page }, test
   await photograph(page, testInfo, "checkout-order-number");
 });
 
+test("shows the order date in the confirmation message", async ({ page }) => {
+  const today = new Date().toISOString().slice(0, 10);
+  await placeOrder(page);
+  await expect(page.locator("#order-date")).toHaveText(`Order date: ${today}`);
+});
+
+test("keeps the order date in the confirmation after a page reload", async ({ page }) => {
+  const today = new Date().toISOString().slice(0, 10);
+  await placeOrder(page);
+
+  await page.reload();
+
+  await expect(page.locator("#order-date")).toHaveText(`Order date: ${today}`);
+});
+
+test("hides the order date for a saved order that has none", async ({ page }) => {
+  await page.goto("/");
+  const saved = { number: "ABCDEFGH", method: "standard", costCents: 0, totalCents: 0, balanceAfter: 1000 };
+  await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: JSON.stringify(saved) });
+  await page.reload();
+
+  await expect(page.getByRole("status")).toHaveText("Order placed: ABCDEFGH. You will get an email with the tracking code.");
+  await expect(page.locator("#order-date")).toBeHidden();
+});
+
 test("keeps the order number in the confirmation after a page reload", async ({ page }) => {
   const number = await placeOrder(page);
 
@@ -60,7 +85,11 @@ test("gives a second order a different number once the first is cleared", async 
 test("starts a fresh checkout when the saved order is malformed", async ({ page }) => {
   await page.goto("/");
 
-  for (const saved of ["{not json", JSON.stringify({ number: "lowercase", method: "standard", costCents: 0, totalCents: 0 })]) {
+  for (const saved of [
+    "{not json",
+    JSON.stringify({ number: "lowercase", method: "standard", costCents: 0, totalCents: 0 }),
+    JSON.stringify({ number: "ABCDEFGH", method: "standard", costCents: 0, totalCents: 0, placedOn: 20261025 }),
+  ]) {
     await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: ORDER_KEY, value: saved });
     await page.reload();
 
