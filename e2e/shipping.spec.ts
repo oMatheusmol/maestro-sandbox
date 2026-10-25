@@ -116,6 +116,32 @@ test("requires a future delivery date for scheduled shipping", async ({ page }) 
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.133,70");
 });
 
+test("warns when the chosen delivery date falls on a weekend", async ({ page }, testInfo) => {
+  await option(page, "Scheduled").click();
+  const date = page.getByLabel("Delivery date");
+  await date.fill("2026-10-17");
+  await expect(page.locator("#date-warning")).toHaveText("This date falls on a weekend.");
+  await date.fill("2026-10-18");
+  await expect(page.locator("#date-warning")).toHaveText("This date falls on a weekend.");
+
+  await fillShipping(page);
+  await pay(page).click();
+  await expect(page.getByRole("status")).toHaveText(ORDER_PLACED);
+  await expect(page.locator("#date-warning")).toBeEmpty();
+  expect(await photograph(page, testInfo, "checkout-weekend")).toMatch(/checkout-weekend\.png$/);
+});
+
+test("shows no weekend warning for a weekday delivery date", async ({ page }) => {
+  await option(page, "Scheduled").click();
+  const date = page.getByLabel("Delivery date");
+  await date.fill("2026-10-20");
+  await expect(page.locator("#date-warning")).toBeEmpty();
+  await date.fill("2026-10-17");
+  await expect(page.locator("#date-warning")).toHaveText("This date falls on a weekend.");
+  await date.fill("2026-10-20");
+  await expect(page.locator("#date-warning")).toBeEmpty();
+});
+
 test("switching away from scheduled drops the date requirement and the date", async ({ page }) => {
   await option(page, "Scheduled").click();
   await expect(page.getByLabel("Delivery date")).toHaveAttribute("required", "");
