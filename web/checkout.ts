@@ -49,6 +49,7 @@ interface SavedOrder {
   number: string;
   method: ShippingMethod;
   deliveryDate?: string;
+  placedOn?: string;
   costCents: number;
   totalCents: number;
   balanceAfter?: number;
@@ -80,6 +81,11 @@ expiryLine.id = "coupon-expiry";
 expiryLine.className = "discount";
 expiryLine.hidden = true;
 discountLine.after(expiryLine);
+const placedOnLine = document.createElement("p");
+placedOnLine.id = "placed-on";
+placedOnLine.className = "placed";
+placedOnLine.hidden = true;
+placed.after(placedOnLine);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
@@ -240,6 +246,7 @@ function savedOrderOf(raw: string | null): SavedOrder | undefined {
     !ORDER_NUMBER_PATTERN.test(saved.number) ||
     !METHODS.some((option) => option === saved.method) ||
     (saved.deliveryDate !== undefined && typeof saved.deliveryDate !== "string") ||
+    (saved.placedOn !== undefined && typeof saved.placedOn !== "string") ||
     !Number.isInteger(saved.costCents) ||
     saved.totalCents === undefined ||
     !Number.isInteger(saved.totalCents) ||
@@ -277,6 +284,8 @@ function showPlaced(saved: SavedOrder): void {
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
+  placedOnLine.textContent = saved.placedOn ? `Order date: ${saved.placedOn}.` : "";
+  placedOnLine.hidden = !saved.placedOn;
   pointsEarnedLine.textContent = `Points earned on this order: ${pointsEarned(new Money(saved.totalCents))}`;
   pointsEarnedLine.hidden = false;
   if (saved.discountLabel) {
@@ -411,6 +420,7 @@ form.addEventListener("submit", (event) => {
     number,
     method: delivery.method,
     deliveryDate: delivery.deliveryDate,
+    placedOn: order.placedOn,
     costCents: delivery.cost.cents,
     totalCents: orderTotal(order).cents,
     balanceAfter: balance,
