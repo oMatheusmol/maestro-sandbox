@@ -80,6 +80,12 @@ expiryLine.id = "coupon-expiry";
 expiryLine.className = "discount";
 expiryLine.hidden = true;
 discountLine.after(expiryLine);
+const removeCoupon = document.createElement("a");
+removeCoupon.id = "remove-coupon";
+removeCoupon.href = "#";
+removeCoupon.textContent = "Remove coupon";
+removeCoupon.hidden = true;
+expiryLine.after(removeCoupon);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
@@ -224,7 +230,19 @@ function applyDiscount(coupon: Coupon): void {
   discountLine.hidden = false;
   expiryLine.textContent = `Expires ${coupon.expiresAt.toISOString().slice(0, 10)}`;
   expiryLine.hidden = false;
+  removeCoupon.hidden = false;
   render();
+}
+
+/** Takes the discount out of the one discount slot, whether a coupon or points, and forgets it on reload. */
+function clearDiscount(): void {
+  applied = undefined;
+  discount = new Money(0);
+  pointsSpent = 0;
+  discountLine.hidden = true;
+  expiryLine.hidden = true;
+  removeCoupon.hidden = true;
+  localStorage.removeItem(DISCOUNT_KEY);
 }
 
 /** The placed order kept under ORDER_KEY, or undefined when none is kept or the stored value is malformed. */
@@ -274,6 +292,7 @@ function pendingDiscountOf(raw: string | null): PendingDiscount | undefined {
 function showPlaced(saved: SavedOrder): void {
   pay.disabled = true;
   clearCart.hidden = true;
+  removeCoupon.hidden = true;
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
@@ -363,14 +382,15 @@ clearCart.addEventListener("click", (event) => {
   subtotal = cartTotal(cart);
   weightKg = cartWeight(cart);
   lines.replaceChildren();
-  applied = undefined;
-  discount = new Money(0);
-  pointsSpent = 0;
-  discountLine.hidden = true;
-  expiryLine.hidden = true;
-  localStorage.removeItem(DISCOUNT_KEY);
+  clearDiscount();
   showCartCounts();
   pay.disabled = true;
+  render();
+});
+
+removeCoupon.addEventListener("click", (event) => {
+  event.preventDefault();
+  clearDiscount();
   render();
 });
 
