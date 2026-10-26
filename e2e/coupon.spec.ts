@@ -123,3 +123,28 @@ test("shows the coupon field and Apply button above the pay button", async ({ pa
     expect(payBox.x + payBox.width).toBeLessThanOrEqual(viewport.width);
   }
 });
+
+test("shows a Remove coupon link once a coupon is applied", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Remove coupon", exact: true })).toBeHidden();
+
+  await page.getByLabel("Coupon code").fill("WELCOME10");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await expect(page.getByRole("link", { name: "Remove coupon", exact: true })).toBeVisible();
+  expect(await photograph(page, testInfo, "checkout-coupon-removable")).toMatch(/checkout-coupon-removable\.png$/);
+});
+
+test("clicking Remove coupon takes the coupon off the total", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("Coupon code").fill("WELCOME10");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.015,83");
+
+  await page.getByRole("link", { name: "Remove coupon", exact: true }).click();
+
+  await expect(page.locator("#discount")).toBeHidden();
+  await expect(page.locator("#coupon-expiry")).toBeHidden();
+  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
+  await expect(page.getByRole("link", { name: "Remove coupon", exact: true })).toBeHidden();
+});
