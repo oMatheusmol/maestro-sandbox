@@ -1,6 +1,56 @@
 import { expect, test } from "@playwright/test";
 import { photograph } from "./screens.js";
 
+test("shows the remove link once a coupon is applied", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await expect(page.locator("#remove-coupon")).toHaveCount(1);
+  await expect(page.locator("#remove-coupon")).toBeHidden();
+
+  await page.getByLabel("Coupon code").fill("WELCOME10");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await expect(page.locator("#remove-coupon")).toBeVisible();
+  await expect(page.locator("#remove-coupon")).toHaveText("Remove coupon");
+  expect(await photograph(page, testInfo, "checkout-coupon-remove")).toMatch(/checkout-coupon-remove\.png$/);
+});
+
+test("hides the remove link when no coupon is applied", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByLabel("Coupon code").fill("OLD5");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await expect(page.getByRole("alert")).toHaveText("coupon OLD5 expired on 2020-01-01T00:00:00.000Z");
+  await expect(page.locator("#remove-coupon")).toHaveCount(1);
+  await expect(page.locator("#remove-coupon")).toBeHidden();
+});
+
+test("removes the applied coupon when the remove link is clicked", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page.getByLabel("Coupon code").fill("WELCOME10");
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.015,83");
+
+  await page.locator("#remove-coupon").click();
+
+  await expect(page.locator("#remove-coupon")).toBeHidden();
+  await expect(page.locator("#discount")).toBeHidden();
+  await expect(page.locator("#coupon-expiry")).toBeHidden();
+  await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");
+  await expect(page.getByLabel("Coupon code")).toBeFocused();
+  expect(await photograph(page, testInfo, "checkout-coupon-removed")).toMatch(/checkout-coupon-removed\.png$/);
+});
+
+test("hides the remove link for a points redemption", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Redeem points" }).click();
+
+  await expect(page.locator("#discount")).toBeVisible();
+  await expect(page.locator("#remove-coupon")).toHaveCount(1);
+  await expect(page.locator("#remove-coupon")).toBeHidden();
+});
+
 test("applies a percentage coupon to the total and the pay button", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#total")).toHaveText("Total do pedido: R$ 1.128,70");

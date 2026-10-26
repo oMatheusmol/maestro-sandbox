@@ -80,6 +80,12 @@ expiryLine.id = "coupon-expiry";
 expiryLine.className = "discount";
 expiryLine.hidden = true;
 discountLine.after(expiryLine);
+const removeCoupon = document.createElement("a");
+removeCoupon.id = "remove-coupon";
+removeCoupon.href = "#";
+removeCoupon.textContent = "Remove coupon";
+removeCoupon.hidden = true;
+expiryLine.after(removeCoupon);
 const pointsBalance = document.querySelector<HTMLParagraphElement>("#points-balance")!;
 const redeemButton = document.querySelector<HTMLButtonElement>("#redeem-points")!;
 const pointsEarnedLine = document.querySelector<HTMLParagraphElement>("#points-earned")!;
@@ -192,6 +198,7 @@ function render(now: Date = new Date()): void {
   shipping.textContent = selected.cost.cents === 0 ? "Free shipping" : `Shipping: ${selected.cost.toBRL()}`;
   shipping.classList.toggle("badge", selected.cost.cents === 0);
   pay.textContent = `Place order and pay ${amount.toBRL()}`;
+  removeCoupon.hidden = applied === undefined || pointsSpent > 0;
 }
 
 /** Disables the delivery, coupon and points controls once the order is captured, so the total keeps matching the captured order. */
@@ -274,6 +281,7 @@ function pendingDiscountOf(raw: string | null): PendingDiscount | undefined {
 function showPlaced(saved: SavedOrder): void {
   pay.disabled = true;
   clearCart.hidden = true;
+  removeCoupon.hidden = true;
   pay.textContent = `Place order and pay ${new Money(saved.totalCents).toBRL()}`;
   lockAfterCapture();
   placed.textContent = `Order placed: ${saved.number}. You will get an email with the tracking code.`;
@@ -301,6 +309,7 @@ function restoreDiscount(pending: PendingDiscount): void {
       const points = Math.min(pending.points, balance, subtotal.cents);
       applyDiscount(pointsCoupon(points, POINTS_EXPIRES_AT));
       pointsSpent = points;
+      render();
     }
   } catch {
     localStorage.removeItem(DISCOUNT_KEY);
@@ -351,7 +360,21 @@ redeemButton.addEventListener("click", () => {
   const points = Math.min(balance, subtotal.cents);
   applyDiscount(pointsCoupon(points, POINTS_EXPIRES_AT));
   pointsSpent = points;
+  render();
   localStorage.setItem(DISCOUNT_KEY, JSON.stringify({ points }));
+});
+
+removeCoupon.addEventListener("click", (event) => {
+  event.preventDefault();
+  applied = undefined;
+  discount = new Money(0);
+  pointsSpent = 0;
+  couponError.textContent = "";
+  discountLine.hidden = true;
+  expiryLine.hidden = true;
+  localStorage.removeItem(DISCOUNT_KEY);
+  couponInput.focus();
+  render();
 });
 
 clearCart.addEventListener("click", (event) => {
